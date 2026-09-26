@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,15 +20,12 @@ interface InteractiveMapProps {
   } | null;
 }
 
+/**
+ * Mapa Leaflet interactivo. Debe cargarse SIEMPRE con
+ * `next/dynamic(() => import('./InteractiveMap'), { ssr: false })`: leaflet
+ * toca `window` al importarse, así que no puede renderizarse en el servidor.
+ */
 export default function InteractiveMap({ routeData }: InteractiveMapProps) {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) return <div className="h-[400px] w-full bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse" />;
-
   const center: [number, number] = [3.4516, -76.532];
   const zoom = 13;
 
