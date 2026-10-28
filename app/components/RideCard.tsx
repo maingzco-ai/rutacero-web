@@ -1,78 +1,12 @@
 'use client';
 
-import {
-  Clock,
-  GraduationCap,
-  KeyRound,
-  Lock,
-  MapPin,
-} from 'lucide-react';
+import { memo } from 'react';
+import { Clock, GraduationCap, KeyRound, Lock, MapPin } from 'lucide-react';
+import { Card, CardContent } from './ui/Card';
+import { Badge } from './ui/Badge';
+import { Progress } from './ui/Progress';
+import { formatCOP, getInitials, getMembershipLevel, getMembershipProgress } from '@/app/lib/design-system';
 
-// ---- Membresía RutaPass (regla de negocio real) ---------------------------
-type Nivel = {
-  min: number;
-  max: number;
-  emoji: string;
-  etiqueta: string;
-  badgeClases: string;
-  barraClases: string;
-  proximo: number | null;
-};
-
-const NIVELES: Nivel[] = [
-  {
-    min: 0,
-    max: 4,
-    emoji: '🌱',
-    etiqueta: 'Nuevo Usuario',
-    badgeClases:
-      'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
-    barraClases: 'from-slate-400 to-slate-600',
-    proximo: 5,
-  },
-  {
-    min: 5,
-    max: 19,
-    emoji: '⭐',
-    etiqueta: 'Miembro RutaPass',
-    badgeClases:
-      'bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/25 dark:text-emerald-400',
-    barraClases: 'from-emerald-400 to-emerald-600',
-    proximo: 20,
-  },
-  {
-    min: 20,
-    max: Infinity,
-    emoji: '👑',
-    etiqueta: 'Embajador Sostenible',
-    badgeClases:
-      'bg-amber-400/20 text-amber-800 dark:bg-amber-400/25 dark:text-amber-300',
-    barraClases: 'from-amber-400 to-yellow-600',
-    proximo: null,
-  },
-];
-
-export function nivelMembresia(viajes: number): Nivel {
-  return (
-    NIVELES.find((n) => viajes >= n.min && viajes <= n.max) ?? NIVELES[0]
-  );
-}
-
-// ---- Utilidades -------------------------------------------------------
-export function formatCOP(value: number): string {
-  return `$${new Intl.NumberFormat('es-CO').format(value)} COP`;
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join('');
-}
-
-// ---- Componente -------------------------------------------------------
 type RideCardProps = {
   passengerName: string;
   career: string;
@@ -85,7 +19,7 @@ type RideCardProps = {
   isOnBoard?: boolean;
 };
 
-export default function RideCard({
+export const RideCard = memo(function RideCard({
   passengerName,
   career,
   tripCount = 0,
@@ -95,109 +29,94 @@ export default function RideCard({
   pin = 'RC-0000',
   isOnBoard = false,
 }: RideCardProps) {
-  const nivel = nivelMembresia(tripCount);
-
-  // Progreso hacia el siguiente nivel (o 100% si ya es Embajador).
-  let progreso = 100;
-  let faltan = '';
-  if (nivel.proximo !== null) {
-    const rango = nivel.proximo - nivel.min;
-    const dentro = Math.max(0, tripCount - nivel.min);
-    progreso = Math.min(100, Math.round((dentro / rango) * 100));
-    faltan = `${nivel.proximo - tripCount} viaje${nivel.proximo - tripCount === 1 ? '' : 's'} para ${nivel.etiqueta}`;
-  } else {
-    faltan = 'Nivel máximo alcanzado';
-  }
+  const level = getMembershipLevel(tripCount);
+  const { percent, remainingText } = getMembershipProgress(tripCount);
 
   return (
-    <article className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700 dark:bg-slate-800">
-      {/* Avatar + nombre + carrera */}
-      <div className="flex items-center gap-3 p-4 pb-3">
-        <span
-          aria-hidden
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-inner"
-          style={{ backgroundColor: '#10B981' }}
-        >
-          {getInitials(passengerName)}
-        </span>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[15px] font-semibold leading-tight text-slate-900 dark:text-slate-100">
-            {passengerName}
-          </h3>
-          <p className="flex items-center gap-1 truncate text-[13px] text-slate-500 dark:text-slate-400">
-            <GraduationCap className="h-3.5 w-3.5 shrink-0" />
-            {career}
-          </p>
-        </div>
-        {/* Badge de membresía dinámico */}
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${nivel.badgeClases}`}
-        >
-          {nivel.emoji} {nivel.etiqueta}
-        </span>
-      </div>
-
-      <div className="mx-4 h-px bg-slate-100 dark:bg-slate-700" />
-
-      {/* Barra de progreso hacia el siguiente nivel */}
-      <div className="px-4 pt-3">
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-          <div
-            className={`h-full rounded-full bg-gradient-to-r ${nivel.barraClases} transition-all duration-500`}
-            style={{ width: `${progreso}%` }}
-          />
-        </div>
-        <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
-          {faltan}
-        </p>
-      </div>
-
-      {/* Precio destacado + hora de recogida */}
-      <div className="flex items-end justify-between px-4 pt-3">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Tarifa justa
-          </p>
-          <p className="text-[28px] font-extrabold leading-none tracking-tight text-emerald-500 dark:text-emerald-400">
-            {formatCOP(priceCOP)}
-          </p>
-          <p className="mt-1 text-[11px] text-slate-400">{tripCount} viajes</p>
-        </div>
-        <div className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-700/60">
-          <Clock className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-          <div className="leading-none">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
-              Recogida
-            </p>
-            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {pickupTime}
+    <Card padding="none" className="overflow-hidden">
+      <CardContent className="p-0">
+        {/* Avatar + nombre + carrera + badge */}
+        <div className="flex items-center gap-3 p-4 pb-3 border-b border-neutral-200 dark:border-neutral-700">
+          <span
+            aria-hidden="true"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+            style={{ backgroundColor: '#16A34A' }}
+          >
+            {getInitials(passengerName)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-base font-semibold leading-tight text-neutral-900 dark:text-white">
+              {passengerName}
+            </h3>
+            <p className="flex items-center gap-1.5 truncate text-sm text-neutral-500 dark:text-neutral-400">
+              <GraduationCap className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              {career}
             </p>
           </div>
+          <Badge variant="secondary" className="shrink-0">
+            {level.emoji} {level.label}
+          </Badge>
         </div>
-      </div>
 
-      {/* Info de recogida */}
-      <div className="flex items-start gap-2 px-4 pt-3">
-        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-        <p className="text-[13px] leading-snug text-slate-600 dark:text-slate-300">
-          {pickupTime} · {pickupLocation}
-        </p>
-      </div>
+        {/* Progress bar towards next level */}
+        <div className="px-4 pt-3 pb-2 border-b border-neutral-200 dark:border-neutral-700">
+          <Progress value={percent} max={100} size="sm" color="success" />
+          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400 text-center">
+            {remainingText}
+          </p>
+        </div>
 
-      {/* PIN de seguridad */}
-      <div className="p-4 pt-3">
-        {isOnBoard ? (
-          <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white">
-            <Lock className="h-4 w-4" />
-            A bordo · Viaje seguro
+        {/* Precio destacado + hora de recogida */}
+        <div className="flex items-end justify-between px-4 py-4 border-b border-neutral-200 dark:border-neutral-700">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+              Tarifa justa
+            </p>
+            <p className="mt-0.5 text-3xl font-extrabold leading-none tracking-tight text-green-600 dark:text-green-400">
+              {formatCOP(priceCOP)}
+            </p>
+            <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+              {tripCount} viaje{tripCount !== 1 ? 's' : ''}
+            </p>
           </div>
-        ) : (
-          <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-            <KeyRound className="h-4 w-4" />
-            PIN de seguridad: {pin}
+          <div className="flex items-center gap-2 rounded-xl bg-neutral-100 px-3 py-2 dark:bg-neutral-800/60">
+            <Clock className="h-4 w-4 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+            <div className="leading-none text-right">
+              <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                Recogida
+              </p>
+              <p className="text-sm font-bold text-neutral-900 dark:text-white">
+                {pickupTime}
+              </p>
+            </div>
           </div>
-        )}
-      </div>
-    </article>
+        </div>
+
+        {/* Info de recogida */}
+        <div className="flex items-start gap-2 px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-400" aria-hidden="true" />
+          <p className="text-sm leading-snug text-neutral-600 dark:text-neutral-300">
+            {pickupTime} · {pickupLocation}
+          </p>
+        </div>
+
+        {/* PIN de seguridad */}
+        <div className="p-4">
+          {isOnBoard ? (
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-green-500 px-4 py-2.5 text-sm font-semibold text-white">
+              <Lock className="h-4 w-4" aria-hidden="true" />
+              A bordo · Viaje seguro
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-green-500/40 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-700 dark:bg-green-900/20 dark:border-green-500/30 dark:text-green-400">
+              <KeyRound className="h-4 w-4" aria-hidden="true" />
+              PIN de seguridad: {pin}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+});
+
+RideCard.displayName = 'RideCard';

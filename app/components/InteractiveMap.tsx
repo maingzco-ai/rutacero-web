@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { cn } from '@/app/lib/design-system';
 
 export type Location = {
   lat: number;
@@ -18,38 +20,59 @@ interface InteractiveMapProps {
     destino: Location;
     paradas: Location[];
   } | null;
+  className?: string;
 }
 
 /**
- * Mapa Leaflet interactivo. Debe cargarse SIEMPRE con
- * `next/dynamic(() => import('./InteractiveMap'), { ssr: false })`: leaflet
- * toca `window` al importarse, así que no puede renderizarse en el servidor.
+ * Premium Interactive Map - Uber-inspired design
+ * Only loads on client side (react-leaflet uses window)
  */
-export default function InteractiveMap({ routeData }: InteractiveMapProps) {
+export default function InteractiveMap({ routeData, className }: InteractiveMapProps) {
+  const mapRef = useRef<L.Map | null>(null);
   const center: [number, number] = [3.4516, -76.532];
   const zoom = 13;
 
-  // Iconos personalizados
-  const getBlueIcon = () => new L.DivIcon({
-    html: `<div style="background-color:#3B82F6;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
-    className: '',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
-  });
+  // Custom marker icons using Leaflet DivIcon with design system colors
+  const icons = useMemo(() => ({
+    origin: L.divIcon({
+      className: 'rc-marker rc-marker-origin',
+      html: '📍',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18],
+    }),
+    stop: (num: number) => L.divIcon({
+      className: 'rc-marker rc-marker-stop',
+      html: `<span style="font-size: 12px; font-weight: 700;">${num}</span>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18],
+    }),
+    destination: L.divIcon({
+      className: 'rc-marker rc-marker-destination',
+      html: '🏁',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18],
+    }),
+  }), []);
 
-  const getGreenNumberedIcon = (num: number) => new L.DivIcon({
-    html: `<div style="background-color:#10B981;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);">${num}</div>`,
-    className: '',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
-  });
-
+  
   if (!routeData) {
     return (
-      <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%', minHeight: '400px' }} scrollWheelZoom={false}>
-        <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <MapContainer
+        ref={mapRef}
+        center={center}
+        zoom={zoom}
+        style={{ height: '100%', width: '100%', minHeight: '400px' }}
+        scrollWheelZoom={false}
+        className={cn('rounded-3xl', className)}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
+        />
       </MapContainer>
     );
   }
@@ -62,40 +85,109 @@ export default function InteractiveMap({ routeData }: InteractiveMapProps) {
   ];
 
   return (
-    <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%', minHeight: '400px' }} scrollWheelZoom={false}>
-      <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+    <MapContainer
+      ref={mapRef}
+      center={center}
+      zoom={zoom}
+      style={{ height: '100%', width: '100%', minHeight: '400px' }}
+      scrollWheelZoom={false}
+      className={cn('rounded-3xl', className)}
+      >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={19}
+      />
 
-      {/* Línea de ruta */}
-      <Polyline positions={polylineCoords} color="#10B981" weight={4} opacity={0.8} />
+      {/* Route polyline - premium green */}
+      <Polyline
+        positions={polylineCoords}
+        color="#16A34A"
+        weight={5}
+        opacity={0.9}
+        lineCap="round"
+        lineJoin="round"
+        dashArray={paradas.length > 0 ? undefined : '10, 10'}
+      />
 
-      {/* Origen */}
-      <Marker position={[origen.lat, origen.lng]} icon={getBlueIcon()}>
-        <Popup>
-          <b>{origen.name}</b><br />
-          Hora: {origen.estimatedTime || 'N/A'}<br />
-          Costo: ${origen.price?.toFixed(2) || '0.00'} COP
+      {/* Origin marker */}
+      <Marker position={[origen.lat, origen.lng]} icon={icons.origin}>
+        <Popup
+          className="rc-popup"
+          closeButton={false}
+        >
+          <div className="p-1 min-w-[180px]">
+            <p className="font-semibold text-neutral-900 dark:text-white">{origen.name}</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+              {origen.estimatedTime ? `Hora: ${origen.estimatedTime}` : 'Punto de partida'}
+            </p>
+          </div>
         </Popup>
       </Marker>
 
-      {/* Paradas */}
+      {/* Stop markers with numbers */}
       {paradas.map((stop, idx) => (
-        <Marker key={`${stop.name}-${idx}`} position={[stop.lat, stop.lng]} icon={getGreenNumberedIcon(idx + 1)}>
-          <Popup>
-            <b>{stop.name}</b><br />
-            Hora: {stop.estimatedTime || 'N/A'}<br />
-            Costo: ${stop.price?.toFixed(2) || '0.00'} COP
+        <Marker key={`${stop.name}-${idx}`} position={[stop.lat, stop.lng]} icon={icons.stop(idx + 1)}>
+          <Popup
+            className="rc-popup"
+            closeButton={false}
+          >
+            <div className="p-1 min-w-[180px]">
+              <p className="font-semibold text-neutral-900 dark:text-white">{stop.name}</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                {stop.estimatedTime ? `Recogida: ${stop.estimatedTime}` : 'Parada intermedia'}
+              </p>
+              {stop.price && (
+                <p className="text-sm font-semibold text-green-600 dark:text-green-400 mt-1">
+                  {stop.price.toLocaleString('es-CO')} COP
+                </p>
+              )}
+            </div>
           </Popup>
         </Marker>
       ))}
 
-      {/* Destino */}
-      <Marker position={[destino.lat, destino.lng]}>
-        <Popup>
-          <b>{destino.name}</b><br />
-          Hora: {destino.estimatedTime || 'N/A'}<br />
-          Costo: ${destino.price?.toFixed(2) || '0.00'} COP
+      {/* Destination marker */}
+      <Marker position={[destino.lat, destino.lng]} icon={icons.destination}>
+        <Popup
+          className="rc-popup"
+          closeButton={false}
+        >
+          <div className="p-1 min-w-[180px]">
+            <p className="font-semibold text-neutral-900 dark:text-white">{destino.name}</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+              {destino.estimatedTime ? `Llegada: ${destino.estimatedTime}` : 'Destino final'}
+            </p>
+          </div>
         </Popup>
       </Marker>
     </MapContainer>
   );
+}
+
+/* Leaflet popup custom styles - injected via CSS */
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
+    .rc-popup .leaflet-popup-content-wrapper {
+      border-radius: 1rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      padding: 0;
+    }
+    .rc-popup .leaflet-popup-content {
+      margin: 0;
+      font-family: inherit;
+    }
+    .rc-popup .leaflet-popup-tip {
+      background: white;
+    }
+    .dark .rc-popup .leaflet-popup-tip {
+      background: #1a1a1a;
+    }
+    .dark .rc-popup .leaflet-popup-content-wrapper {
+      background: #1a1a1a;
+      color: white;
+    }
+  `;
+  document.head.appendChild(style);
 }

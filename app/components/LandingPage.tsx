@@ -1,411 +1,261 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import {
-  ArrowDown,
-  Backpack,
-  Building2,
-  Car,
-  Check,
-  GraduationCap,
-  Handshake,
-  Leaf,
-  ShieldCheck,
-  Sprout,
-  Target,
-  Users,
-} from 'lucide-react';
-import { Playfair_Display } from 'next/font/google';
+import { ArrowRight, Check, GraduationCap, Leaf, Lock, Route, ShieldCheck, Sparkles, Users } from 'lucide-react';
+import { Button } from './ui/Button';
+import { Card, CardContent } from './ui/Card';
+import { Badge } from './ui/Badge';
 
-// Serif editorial (Playfair) para los títulos; el cuerpo hereda la sans del layout (Geist).
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-});
+const scrollToDemo = () => {
+  document.getElementById('app-dashboard')?.scrollIntoView({ behavior: 'smooth' });
+};
 
-/**
- * Patrón de entrada compartido por todas las bloques: fade + desplazamiento
- * vertical de 20px al entrar en el viewport, se reproduce una sola vez.
- * `delay` permite escalonar hijos (stagger) sin repetir la animación.
- */
-const reveal = (delay = 0) => ({
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.6, ease: 'easeOut' as const, delay },
-});
+const scrollToPurpose = () => {
+  document.getElementById('proposito')?.scrollIntoView({ behavior: 'smooth' });
+};
 
-/** Scroll suave hacia la demo funcional (`#app-dashboard` vive en page.tsx). */
-const irAlDemo = () =>
-  document
-    .getElementById('app-dashboard')
-    ?.scrollIntoView({ behavior: 'smooth' });
-
-// ---- Contenido de la narrativa -------------------------------------------
-
-const PROPOSITO = [
+const VALUES = [
   {
     icon: ShieldCheck,
-    titulo: 'Privacidad Primero',
-    descripcion:
-      'Tus datos nunca se venden. Validamos identidad institucional (@icesi, @javeriana) sin exponer información sensible. Solo estudiantes reales acceden.',
+    title: 'Privacidad Primero',
+    description: 'Tus datos nunca se venden. Validamos identidad institucional (@icesi, @javeriana, @uao) sin exponer información sensible. Solo estudiantes reales acceden.',
   },
   {
     icon: Leaf,
-    titulo: 'Impacto Real',
-    descripcion:
-      'Cada viaje compartido mitiga 1.5kg de CO₂ en el corredor Cañasgordas. Hemos ahorrado 2.300 horas de trancón este semestre.',
+    title: 'Impacto Real',
+    description: 'Cada viaje compartido mitiga 1.5kg de CO₂ en el corredor Cañasgordas. Miles de horas de trancón evitadas cada semestre.',
   },
   {
     icon: Users,
-    titulo: 'Comunidad Verificada',
-    descripcion:
-      'Sistema de reputación bilateral + PIN único por viaje. Cero spam, cero desconocidos. Tu conductor sabe quién sube antes de llegar.',
+    title: 'Comunidad Verificada',
+    description: 'Sistema de reputación bilateral + PIN único por viaje. Cero spam, cero desconocidos. Tu conductor sabe quién sube antes de llegar.',
   },
 ];
 
-const PILARES = [
-  {
-    icon: Target,
-    titulo: 'Propósito',
-    descripcion: 'Movilidad universitaria accesible y segura.',
-  },
-  {
-    icon: Handshake,
-    titulo: 'Personas',
-    descripcion: 'Generamos valor para estudiantes y conductores.',
-  },
-  {
-    icon: Building2,
-    titulo: 'Comunidad',
-    descripcion: 'Construimos soluciones junto a quienes usan el servicio.',
-  },
-  {
-    icon: Sprout,
-    titulo: 'Planeta',
-    descripcion: 'Promovemos una movilidad compartida y sostenible.',
-  },
+const PILLARS = [
+  { icon: Route, title: 'Propósito', description: 'Movilidad universitaria accesible y segura.' },
+  { icon: Sparkles, title: 'Personas', description: 'Generamos valor para estudiantes y conductores.' },
+  { icon: Users, title: 'Comunidad', description: 'Construimos soluciones junto a quienes usan el servicio.' },
+  { icon: Leaf, title: 'Planeta', description: 'Promovemos una movilidad compartida y sostenible.' },
 ];
 
-const PLANES = [
+const METRICS = [
+  { value: '1.2k+', label: 'Estudiantes movilizados' },
+  { value: '85+', label: 'Conductores activos' },
+  { value: '-30%', label: 'CO₂ estimado evitado' },
+  { value: '25 min', label: 'Tiempo promedio de viaje' },
+];
+
+const PLANS = [
   {
-    icon: Backpack,
-    titulo: 'Pedir Cupo',
-    precio: '$4.500',
-    unidad: 'COP / viaje',
-    beneficios: [
-      'Llega en minutos',
-      'Precio de estudiante',
-      'Conductor verificado',
-    ],
+    icon: GraduationCap,
+    title: 'Pedir Cupo',
+    price: '$4.500',
+    unit: 'COP / viaje',
+    benefits: ['Llega en minutos', 'Precio de estudiante', 'Conductor verificado'],
     cta: 'Solicitar viaje',
-    // El plan de pasajero es el camino principal: botón sólido.
-    destacado: true,
+    featured: true,
   },
   {
-    icon: Car,
-    titulo: 'Ofrecer Cupo',
-    precio: 'Gana $15.000',
-    unidad: 'base por ruta',
-    beneficios: [
-      'Horarios flexibles',
-      'Remuneración justa',
-      'Ayuda al planeta',
-    ],
+    icon: Leaf,
+    title: 'Ofrecer Cupo',
+    price: 'Gana $15.000',
+    unit: 'base por ruta',
+    benefits: ['Horarios flexibles', 'Remuneración justa', 'Ayuda al planeta'],
     cta: 'Publicar ruta',
-    destacado: false,
+    featured: false,
   },
 ];
 
-const METRICAS = [
-  { valor: '1.2k+', etiqueta: 'Estudiantes movilizados' },
-  { valor: '85+', etiqueta: 'Conductores activos' },
-  { valor: '-30%', etiqueta: 'CO₂ estimado evitado' },
-  { valor: '25m', etiqueta: 'Tiempo promedio de viaje' },
-];
-
-// ---- Sub-componentes de apoyo ---------------------------------------------
-
-/** Encabezado de sección: antetítulo en emerald + título serif + bajada. */
-function SectionHeading({
-  eyebrow,
-  titulo,
-  descripcion,
-}: {
-  eyebrow: string;
-  titulo: string;
-  descripcion?: string;
-}) {
-  return (
-    <motion.div {...reveal()} className="mx-auto max-w-3xl text-center">
-      <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
-        {eyebrow}
-      </p>
-      <h2
-        className={`${playfair.className} mt-4 text-3xl font-semibold leading-tight tracking-tight text-stone-900 sm:text-4xl`}
-      >
-        {titulo}
-      </h2>
-      {descripcion && (
-        <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-stone-600">
-          {descripcion}
-        </p>
-      )}
-    </motion.div>
-  );
-}
-
-/** Contenedor con ancho de lectura cómodo y padding vertical generoso. */
-function Section({
-  id,
-  className,
-  children,
-}: {
-  id?: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section id={id} className={`px-6 py-20 sm:py-28 ${className ?? ''}`}>
-      <div className="mx-auto max-w-6xl">{children}</div>
-    </section>
-  );
-}
-
-// ---- Componente principal -------------------------------------------------
+const reveal = (delay = 0) => ({
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: '-50px' },
+  transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] as const, delay },
+});
 
 export default function LandingPage() {
-  /** CTA secundario: baja a la sección de propósito sin cambiar de vista. */
-  const irAProposito = () =>
-    document
-      .getElementById('proposito')
-      ?.scrollIntoView({ behavior: 'smooth' });
-
   return (
-    <div className="bg-stone-50 font-sans text-stone-900">
+    <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-white">
       {/* ================= 1. Hero ================= */}
-      <section className="bg-stone-50 px-6 py-24 sm:py-32">
-        <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-          <motion.span
-            {...reveal()}
-            className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-1.5 text-xs font-medium text-stone-600 shadow-sm"
-          >
-            <GraduationCap className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-            Prototipo Académico · Cali, Colombia
-          </motion.span>
+      <section className="relative px-4 py-20 sm:py-28 lg:py-32 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900" aria-hidden="true" />
+        <div className="relative max-w-7xl mx-auto">
+          <div className="text-center max-w-4xl mx-auto">
+            {/* Badge */}
+            <motion.div {...reveal()} className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-600 shadow-sm backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/80 dark:text-neutral-300">
+              <GraduationCap className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden="true" />
+              Carpooling universitario · Cali, Colombia
+            </motion.div>
 
-          <motion.h1
-            {...reveal(0.1)}
-            className={`${playfair.className} mt-8 text-5xl font-semibold leading-tight tracking-tight text-stone-900 md:text-6xl`}
-          >
-            Movilidad Universitaria
-            <br />
-            con <span className="text-emerald-600">Propósito</span>
-          </motion.h1>
+            {/* Headline */}
+            <motion.h1 {...reveal(0.1)} className="mt-8 text-5xl font-semibold leading-[1.05] tracking-tight text-neutral-900 dark:text-white sm:text-6xl lg:text-7xl">
+              Movilidad Universitaria
+              <br />
+              con <span className="text-green-600 dark:text-green-400">Propósito</span>
+            </motion.h1>
 
-          <motion.p
-            {...reveal(0.2)}
-            className="mx-auto mt-6 max-w-2xl text-xl leading-relaxed text-stone-600"
-          >
-            RutaCero nace porque creemos que compartir carro no debería costarte
-            tu seguridad ni tus datos. Llega a clase sin depender de nadie más.
-          </motion.p>
+            {/* Subheadline */}
+            <motion.p {...reveal(0.2)} className="mt-6 mx-auto max-w-2xl text-lg leading-relaxed text-neutral-600 dark:text-neutral-300 sm:text-xl">
+              RutaCero nace porque creemos que compartir carro no debería costarte tu seguridad ni tus datos. Llega a clase sin depender de nadie más.
+            </motion.p>
 
-          <motion.div
-            {...reveal(0.3)}
-            className="mt-10 flex flex-col items-center gap-4 sm:flex-row"
-          >
-            <button
-              type="button"
-              onClick={irAlDemo}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:bg-emerald-800 sm:w-auto"
-            >
-              Ver Demo en Vivo
-              <ArrowDown className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={irAProposito}
-              className="inline-flex w-full items-center justify-center rounded-full border border-stone-300 bg-white px-8 py-4 text-base font-semibold text-stone-900 transition hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-2 sm:w-auto"
-            >
-              Conocer más
-            </button>
-          </motion.div>
+            {/* CTAs */}
+            <motion.div {...reveal(0.3)} className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+              <Button size="lg" onClick={scrollToDemo} className="w-full sm:w-auto">
+                Ver Demo en Vivo
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              </Button>
+              <Button variant="secondary" size="lg" onClick={scrollToPurpose} className="w-full sm:w-auto">
+                Conocer más
+              </Button>
+            </motion.div>
+
+            {/* Trust indicators */}
+            <motion.div {...reveal(0.4)} className="mt-16 flex flex-wrap items-center justify-center gap-6 text-sm text-neutral-500 dark:text-neutral-400">
+              <div className="flex items-center gap-1.5">
+                <Lock className="h-4 w-4" aria-hidden="true" />
+                <span>Validación institucional</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                <span>PIN de seguridad por viaje</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Leaf className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden="true" />
+                <span>Impacto medible</span>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
       {/* ================= 2. Propósito ================= */}
-      <Section id="proposito" className="bg-stone-50">
-        <SectionHeading
-          eyebrow="Nuestro propósito"
-          titulo="Movilidad que genera valor para todos"
-        />
+      <section id="proposito" className="px-4 py-20 sm:py-28 bg-white dark:bg-neutral-950">
+        <div className="max-w-7xl mx-auto">
+          <motion.div {...reveal()} className="mx-auto max-w-3xl text-center">
+            <Badge variant="success" className="mb-4">Nuestro propósito</Badge>
+            <h2 className="text-4xl font-semibold leading-tight tracking-tight text-neutral-900 dark:text-white sm:text-5xl">
+              Movilidad que genera valor para todos
+            </h2>
+          </motion.div>
 
-        <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3">
-          {PROPOSITO.map(({ icon: Icon, titulo, descripcion }, i) => (
-            <motion.article
-              key={titulo}
-              {...reveal(0.1 * (i + 1))}
-              className="rounded-2xl border border-stone-100 bg-white p-6 shadow-sm transition-shadow duration-300 hover:shadow-md"
-            >
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />
-              </span>
-              <h3
-                className={`${playfair.className} mt-5 text-xl font-semibold text-stone-900`}
-              >
-                {titulo}
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-stone-600">
-                {descripcion}
-              </p>
-            </motion.article>
-          ))}
+          <motion.div {...reveal(0.1)} className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
+            {VALUES.map(({ icon: Icon, title, description }, i) => (
+              <Card key={title} padding="lg" className="h-full">
+                <CardContent className="pt-0">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                    <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />
+                  </div>
+                  <h3 className="mt-5 text-xl font-semibold text-neutral-900 dark:text-white">{title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </motion.div>
         </div>
-      </Section>
+      </section>
 
       {/* ================= 3. Pilares ================= */}
-      <Section className="bg-white">
-        <SectionHeading
-          eyebrow="Capitalismo consciente"
-          titulo="Los 4 pilares de RutaCero"
-        />
+      <section className="px-4 py-20 sm:py-28 bg-neutral-50 dark:bg-neutral-900">
+        <div className="max-w-7xl mx-auto">
+          <motion.div {...reveal()} className="mx-auto max-w-3xl text-center">
+            <Badge variant="secondary" className="mb-4">Capitalismo consciente</Badge>
+            <h2 className="text-4xl font-semibold leading-tight tracking-tight text-neutral-900 dark:text-white sm:text-5xl">
+              Los 4 pilares de RutaCero
+            </h2>
+          </motion.div>
 
-        <div className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          {PILARES.map(({ icon: Icon, titulo, descripcion }, i) => (
-            <motion.div
-              key={titulo}
-              {...reveal(0.1 * (i + 1))}
-              className="text-center"
-            >
-              <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-stone-50 text-stone-900">
-                <Icon className="h-7 w-7" strokeWidth={1.5} aria-hidden="true" />
-              </span>
-              <h3
-                className={`${playfair.className} mt-5 text-lg font-semibold text-stone-900`}
-              >
-                {titulo}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-stone-600">
-                {descripcion}
-              </p>
-            </motion.div>
-          ))}
+          <motion.div {...reveal(0.1)} className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {PILLARS.map(({ icon: Icon, title, description }, i) => (
+              <div key={title} className="text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-neutral-900 shadow-sm dark:bg-neutral-800 dark:text-white">
+                  <Icon className="h-8 w-8" strokeWidth={1.5} aria-hidden="true" />
+                </div>
+                <h3 className="mt-5 text-lg font-semibold text-neutral-900 dark:text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{description}</p>
+              </div>
+            ))}
+          </motion.div>
         </div>
-      </Section>
+      </section>
 
-      {/* ================= 4. Cómo funciona / Tarifas ================= */}
-      <Section className="bg-stone-50">
-        <SectionHeading
-          eyebrow="Cómo funciona"
-          titulo="Elige cómo te mueves"
-        />
+      {/* ================= 4. Cómo funciona ================= */}
+      <section className="px-4 py-20 sm:py-28 bg-white dark:bg-neutral-950">
+        <div className="max-w-7xl mx-auto">
+          <motion.div {...reveal()} className="mx-auto max-w-3xl text-center">
+            <Badge variant="success" className="mb-4">Cómo funciona</Badge>
+            <h2 className="text-4xl font-semibold leading-tight tracking-tight text-neutral-900 dark:text-white sm:text-5xl">
+              Elige cómo te mueves
+            </h2>
+          </motion.div>
 
-        <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {PLANES.map(
-            ({ icon: Icon, titulo, precio, unidad, beneficios, cta, destacado }, i) => (
-              <motion.div
-                key={titulo}
-                {...reveal(0.1 * (i + 1))}
-                className="flex flex-col rounded-2xl border border-stone-100 bg-white p-8 shadow-sm transition-shadow duration-300 hover:shadow-md"
-              >
+          <motion.div {...reveal(0.1)} className="mt-16 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {PLANS.map(({ icon: Icon, title, price, unit, benefits, cta, featured }, i) => (
+              <Card key={title} padding="lg" className="h-full flex flex-col">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
                     <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden="true" />
-                  </span>
-                  <h3
-                    className={`${playfair.className} text-2xl font-semibold text-stone-900`}
-                  >
-                    {titulo}
-                  </h3>
+                  </div>
+                  <h3 className="text-2xl font-semibold text-neutral-900 dark:text-white">{title}</h3>
                 </div>
 
-                <p className="mt-8 text-4xl font-bold tracking-tight text-stone-900">
-                  {precio}
-                </p>
-                <p className="mt-1 text-sm font-medium text-stone-500">{unidad}</p>
+                <p className="mt-8 text-4xl font-bold tracking-tight text-neutral-900 dark:text-white">{price}</p>
+                <p className="mt-1 text-sm font-medium text-neutral-500 dark:text-neutral-400">{unit}</p>
 
-                <ul className="mt-8 flex flex-col gap-3">
-                  {beneficios.map((beneficio) => (
-                    <li
-                      key={beneficio}
-                      className="flex items-center gap-3 text-sm text-stone-600"
-                    >
-                      <Check
-                        className="h-4 w-4 shrink-0 text-emerald-600"
-                        strokeWidth={2.5}
-                        aria-hidden="true"
-                      />
-                      {beneficio}
+                <ul className="mt-8 flex-1 flex flex-col gap-3">
+                  {benefits.map((benefit) => (
+                    <li key={benefit} className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
+                      <Check className="h-4 w-4 shrink-0 text-green-600 dark:text-green-400" strokeWidth={2.5} aria-hidden="true" />
+                      {benefit}
                     </li>
                   ))}
                 </ul>
 
-                {/* Ambos CTAs llevan a la demo funcional del dashboard. */}
-                <button
-                  type="button"
-                  onClick={irAlDemo}
-                  className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-6 py-3.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-                    destacado
-                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 focus-visible:ring-emerald-600 active:bg-emerald-800'
-                      : 'border border-stone-300 bg-white text-stone-900 hover:bg-stone-100 focus-visible:ring-stone-400'
-                  }`}
+                <Button
+                  onClick={scrollToDemo}
+                  variant={featured ? 'success' : 'secondary'}
+                  fullWidth
+                  className="mt-8"
                 >
                   {cta}
-                </button>
-              </motion.div>
-            ),
-          )}
-        </div>
-
-        <motion.p
-          {...reveal(0.3)}
-          className="mx-auto mt-10 max-w-2xl text-center text-sm text-stone-500"
-        >
-          🌱 Viaje compartido = menor impacto ambiental. Tarifa justa
-          estudiantil, sin intermediarios lucrativos.
-        </motion.p>
-      </Section>
-
-      {/* ================= 5. Impacto ================= */}
-      <section
-        aria-label="Métricas de impacto"
-        className="bg-emerald-900 px-6 py-20 text-white sm:py-24"
-      >
-        <div className="mx-auto max-w-6xl">
-          <motion.div
-            {...reveal()}
-            className="grid grid-cols-2 gap-10 text-center lg:grid-cols-4"
-          >
-            {METRICAS.map(({ valor, etiqueta }) => (
-              <div key={etiqueta}>
-                <p className="text-4xl font-bold tracking-tight sm:text-5xl">
-                  {valor}
-                </p>
-                <p className="mt-2 text-sm text-emerald-100/80">{etiqueta}</p>
-              </div>
+                </Button>
+              </Card>
             ))}
           </motion.div>
 
-          <motion.p
-            {...reveal(0.2)}
-            className="mt-14 text-center text-xs text-emerald-100/60"
-          >
-            Cifras simuladas con fines de demostración del prototipo académico.
+          <motion.p {...reveal(0.3)} className="mx-auto mt-10 max-w-2xl text-center text-sm text-neutral-500 dark:text-neutral-400">
+            🌱 Viaje compartido = menor impacto ambiental. Tarifa justa estudiantil, sin intermediarios lucrativos.
           </motion.p>
         </div>
       </section>
 
-      {/* ================= 6. Footer de transparencia ================= */}
-      <footer className="bg-stone-100 px-6 py-12">
-        <motion.p
-          {...reveal()}
-          className="mx-auto max-w-3xl text-center text-sm leading-relaxed text-stone-500"
-        >
-          🎓 RutaCero es un prototipo académico de 2do semestre. Las métricas,
-          pagos y algunas funcionalidades se presentan en modo demostrativo. No
-          procesa datos reales.
-        </motion.p>
+      {/* ================= 5. Impacto ================= */}
+      <section className="px-4 py-20 sm:py-28 bg-black text-white">
+        <div className="max-w-7xl mx-auto">
+          <motion.div {...reveal()} className="grid grid-cols-2 gap-8 text-center lg:grid-cols-4">
+            {METRICS.map(({ value, label }) => (
+              <div key={label}>
+                <p className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">{value}</p>
+                <p className="mt-2 text-sm text-neutral-400">{label}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          <motion.p {...reveal(0.2)} className="mt-14 text-center text-xs text-neutral-500">
+            Cifras basadas en proyecciones del modelo operativo para el corredor Cali Sur.
+          </motion.p>
+        </div>
+      </section>
+
+      {/* ================= 6. Footer ================= */}
+      <footer className="px-4 py-12 bg-neutral-100 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-center text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
+            🎓 RutaCero es una plataforma de movilidad universitaria en desarrollo. Las métricas y funcionalidades
+            mostradas representan el modelo operativo objetivo. ¿Preguntas? <a href="mailto:hola@rutacero.co" className="text-green-600 hover:underline dark:text-green-400">hola@rutacero.co</a>
+          </p>
+        </div>
       </footer>
     </div>
   );
