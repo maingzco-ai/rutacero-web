@@ -3,13 +3,13 @@
  * Single source of truth for design decisions
  */
 
-// Color palette - Exact Uber-inspired specification
+// Color palette — light canvas, ink, emerald accent (not a black-primary mobility clone)
 export const colors = {
-  primary: '#000000',
+  primary: '#0F8A5F',
   background: '#FFFFFF',
-  secondary: '#F7F7F7',
+  secondary: '#F6F7F8',
   muted: '#E5E7EB',
-  success: '#16A34A',
+  success: '#0F8A5F',
   text: '#111827',
   textSecondary: '#6B7280',
 
@@ -18,7 +18,7 @@ export const colors = {
   borderHover: '#D1D5DB',
   inputBg: '#FFFFFF',
   inputBorder: '#E5E7EB',
-  inputFocus: '#000000',
+  inputFocus: '#0F8A5F',
   cardBg: '#FFFFFF',
   cardBorder: '#E5E7EB',
   overlay: 'rgba(0, 0, 0, 0.5)',
@@ -152,8 +152,8 @@ export const membershipLevels = [
   {
     min: 0,
     max: 4,
-    emoji: '🌱',
-    label: 'Nuevo Usuario',
+    emoji: '',
+    label: 'Nuevo',
     badgeClass: 'badge-secondary',
     progressColors: 'from-gray-400 to-gray-600',
     next: 5,
@@ -161,8 +161,8 @@ export const membershipLevels = [
   {
     min: 5,
     max: 19,
-    emoji: '⭐',
-    label: 'Miembro RutaPass',
+    emoji: '',
+    label: 'RutaPass',
     badgeClass: 'badge-success',
     progressColors: 'from-emerald-400 to-emerald-600',
     next: 20,
@@ -170,8 +170,8 @@ export const membershipLevels = [
   {
     min: 20,
     max: Infinity,
-    emoji: '👑',
-    label: 'Embajador Sostenible',
+    emoji: '',
+    label: 'Embajador',
     badgeClass: 'badge-warning',
     progressColors: 'from-amber-400 to-yellow-600',
     next: null,
@@ -195,7 +195,10 @@ export function getMembershipProgress(trips: number): { percent: number; remaini
   const progress = Math.max(0, trips - level.min);
   const percent = Math.min(100, Math.round((progress / range) * 100));
   const remaining = level.next - trips;
-  const remainingText = `${remaining} viaje${remaining === 1 ? '' : 's'} para ${level.label}`;
+  const nextLevel = membershipLevels.find((item) => item.min === level.next);
+  const remainingText = nextLevel
+    ? `${remaining} viaje${remaining === 1 ? '' : 's'} para ${nextLevel.label}`
+    : `${remaining} viajes para el siguiente nivel`;
 
   return { percent, remainingText };
 }

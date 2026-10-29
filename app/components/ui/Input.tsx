@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, InputHTMLAttributes, LabelHTMLAttributes } from 'react';
+import { forwardRef, InputHTMLAttributes } from 'react';
 import { cn } from '@/app/lib/design-system';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -31,7 +31,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full rounded-2xl bg-white py-2.5 pl-10 pr-10 text-sm text-neutral-900 outline-none transition-all duration-150',
+              'w-full rounded-2xl border bg-white py-2.5 pr-10 text-sm text-neutral-900 outline-none transition-all duration-150',
               'placeholder:text-neutral-400 dark:placeholder:text-neutral-500',
               'dark:bg-neutral-900 dark:text-white dark:border-neutral-700',
               error

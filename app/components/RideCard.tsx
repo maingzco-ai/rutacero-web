@@ -54,7 +54,7 @@ export const RideCard = memo(function RideCard({
             </p>
           </div>
           <Badge variant="secondary" className="shrink-0">
-            {level.emoji} {level.label}
+            {level.label}
           </Badge>
         </div>
 

@@ -89,7 +89,7 @@ export default function SmartSearchInput({
           placeholder={placeholder}
           disabled={disabled}
           className={cn(
-            'w-full rounded-2xl bg-white py-2.5 pl-10 pr-10 text-sm text-neutral-900 outline-none transition-all duration-150',
+            'w-full rounded-2xl border bg-white py-2.5 pl-10 pr-10 text-sm text-neutral-900 outline-none transition-all duration-150',
             'placeholder:text-neutral-400 dark:placeholder:text-neutral-500',
             'dark:bg-neutral-900 dark:text-white dark:border-neutral-700',
             'border-neutral-200 focus:border-black focus:ring-2 focus:ring-black/10 dark:border-neutral-700 dark:focus:border-green-500 dark:focus:ring-green-500/20',

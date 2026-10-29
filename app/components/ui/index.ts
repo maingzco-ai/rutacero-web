@@ -3,3 +3,5 @@ export { Input, type InputProps } from './Input';
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, type CardProps } from './Card';
 export { Badge, type BadgeProps } from './Badge';
 export { Progress, type ProgressProps } from './Progress';
+export { Modal } from './Modal';
+export { BottomSheet } from './BottomSheet';

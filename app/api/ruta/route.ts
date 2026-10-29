@@ -50,8 +50,7 @@ export async function POST(request: Request) {
   } catch {
     return Response.json(
       {
-        error:
-          'Backend Python no disponible. Inicia `python api_server.py` (puerto 8000).',
+        error: 'El servicio de rutas no está disponible en este momento. Intenta de nuevo más tarde.',
       },
       { status: 502 },
     );

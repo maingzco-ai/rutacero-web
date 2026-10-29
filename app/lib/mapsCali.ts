@@ -4,9 +4,8 @@ export type PuntoCali = {
   lng: number;
 };
 
-// Mock local basado en backend/maps_service.py (PUNTOS_BASE_CALI + aliases).
-// Permite que la demo funcione sin tener el servidor Python encendido: al buscar
-// una ruta resolvemos el texto al punto canónico y sus coordenadas de Cali.
+// Catálogo local de puntos en Cali (alineado con el servicio de mapas).
+// Permite resolver origen y destino sin el API Python en local.
 export const PUNTOS_BASE_CALI: Record<string, PuntoCali> = {
   'Universidad Icesi': { nombre: 'Universidad Icesi', lat: 3.3418, lng: -76.5303 },
   'Pontificia Universidad Javeriana Cali': { nombre: 'Pontificia Universidad Javeriana Cali', lat: 3.3486, lng: -76.5322 },
