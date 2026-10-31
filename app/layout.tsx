@@ -23,9 +23,18 @@ export const metadata: Metadata = {
     template: `%s · ${brand.name}`,
   },
   description:
-    'Carpooling para Cali, Colombia. Comparte el camino hacia la universidad o el trabajo con cupos verificados, tarifa justa y PIN de abordaje.',
-  keywords: ['carpooling', 'Cali', 'movilidad compartida', 'RutaCero', 'transporte universitario', 'Cañasgordas'],
-  authors: [{ name: brand.name }],
+    'RutaCero es carpooling para Cali, Colombia. Comparte el camino hacia la universidad o el trabajo con cupos verificados, tarifa justa y PIN de abordaje. Movilidad compartida segura y confiable en el corredor sur de Cali.',
+  keywords: [
+    'carpooling',
+    'Cali',
+    'movilidad compartida',
+    'RutaCero',
+    'transporte universitario',
+    'Cañasgordas',
+    'cupos verificados',
+    'tarifa justa',
+  ],
+  authors: [{ name: brand.name, url: 'https://rutacero.co' }],
   creator: brand.name,
   publisher: brand.name,
   robots: 'index, follow',
@@ -36,14 +45,24 @@ export const metadata: Metadata = {
     title: `${brand.name} · ${brand.tagline}`,
     description: brand.shortTagline,
     siteName: brand.name,
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: `${brand.name} · ${brand.tagline}`,
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: `${brand.name} · ${brand.tagline}`,
     description: brand.shortTagline,
+    images: ['/og-image.png'],
   },
   icons: {
     icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
 };
 

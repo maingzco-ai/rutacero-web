@@ -44,12 +44,13 @@ export default function AboutPage() {
       <section className="px-4 pb-16 pt-10">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-primary">{brand.tagline}</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">
+          <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-6xl">
             Comparte el camino.
-            <span className="text-primary"> Llega con confianza.</span>
+            <span className="text-primary">Llega con confianza.</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-text-secondary dark:text-text-secondary">
+          <p className="mx-auto mt-5 max-w-xl text-lg text-text-secondary dark:text-text-secondary leading-relaxed">
             RutaCero es carpooling para Cali. No es un taxi por app: es un asiento en un auto que ya va a tu universidad o a tu casa.
+            Cupos verificados, tarifa justa y PIN de abordaje para viajar seguro.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/">
@@ -66,10 +67,10 @@ export default function AboutPage() {
           </div>
           <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-text-secondary">
             <span className="inline-flex items-center gap-1.5">
-              <Lock className="h-4 w-4" /> Correo institucional
+              <Lock className="h-4 w-4" /> Correo institucional verificado
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4" /> PIN por viaje
+              <ShieldCheck className="h-4 w-4" /> PIN único por viaje
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Users className="h-4 w-4 text-primary" /> Corredor Cali Sur

@@ -5,6 +5,16 @@ import { MapPin, X } from 'lucide-react';
 import { buscarSugerencias } from '@/app/lib/mapsCali';
 import { cn } from '@/app/lib/design-system';
 
+/** Escapa HTML para prevenir XSS al renderizar sugerencias del usuario. */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 type SmartSearchInputProps = {
   value?: string;
   onValueChange?: (value: string) => void;
@@ -130,7 +140,7 @@ export default function SmartSearchInput({
                 )}
               >
                 <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-                {oficial}
+                {escapeHtml(oficial)}
               </button>
             </li>
           ))}
