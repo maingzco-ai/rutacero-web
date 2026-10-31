@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { Clock, LocateFixed, MapPin, Route } from 'lucide-react';
@@ -11,6 +12,7 @@ import { TripCard } from '../trips/TripCard';
 import { CURRENT_LOCATION, FREQUENT_DESTINATIONS, recentSearches, trips } from '@/app/lib/catalog';
 import { resolverPunto } from '@/app/lib/mapsCali';
 import type { Location } from '../InteractiveMap';
+import { OnboardingFlow } from '../onboarding/OnboardingFlow';
 
 const InteractiveMap = dynamic(() => import('../InteractiveMap'), {
   ssr: false,
@@ -30,6 +32,7 @@ export default function HomeExperience() {
   const router = useRouter();
   const [origin, setOrigin] = useState(CURRENT_LOCATION);
   const [destination, setDestination] = useState('');
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   const featured = trips.filter((trip) => trip.status === 'disponible').slice(0, 3);
 
@@ -47,7 +50,7 @@ export default function HomeExperience() {
     router.push(`/buscar?origen=${encodeURIComponent(from)}&destino=${encodeURIComponent(destino)}`);
   };
 
-  return (
+  const appContent = (
     <div className="relative h-dvh overflow-hidden">
       <div className="absolute inset-0">
         <InteractiveMap routeData={routeData} className="h-full rounded-none" />
@@ -141,5 +144,27 @@ export default function HomeExperience() {
         </Button>
       </BottomSheet>
     </div>
+  );
+
+  if (!onboardingComplete) {
+    return (
+      <div className="h-dvh">
+        <OnboardingFlow onFinish={() => setOnboardingComplete(true)} />
+      </div>
+    );
+  }
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="app"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: { duration: 0.25 } }}
+        className="h-dvh"
+      >
+        {appContent}
+      </motion.div>
+    </AnimatePresence>
   );
 }

@@ -151,10 +151,10 @@
   --color-border-hover: #475569;
   --color-text: #F8FAFC;
   --color-text-secondary: #94A3B8;
-  --color-input-bg: #0B1120;
+  --color-input: #0B1120;
   --color-input-border: #334155;
   --color-input-focus: #22D3EE;
-  --color-card-bg: #0B1120;
+  --color-card: #0B1120;
   --color-card-border: #334155;
   --color-overlay: rgba(0, 0, 0, 0.7);
   --color-overlay-light: rgba(255, 255, 255, 0.04);
@@ -221,7 +221,7 @@ body {
 
 .btn-primary {
   background: var(--gradient-primary);
-  color: var(--color-background);
+  color: #FFFFFF;
   box-shadow: var(--shadow-sm);
 }
 
