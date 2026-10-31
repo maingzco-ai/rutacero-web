@@ -2,30 +2,56 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-primary: #0B7CC0;
+  --color-primary-dark: #085E9A;
+  --color-accent: #22D3EE;
+  --color-background: #FFFFFF;
+  --color-background-dark: #0F172A;
+  --color-canvas: #F8FAFC;
+  --color-canvas-dark: #0B1120;
+  --color-secondary: #F1F5F9;
+  --color-secondary-dark: #1E293B;
+  --color-muted: #CBD5E1;
+  --color-muted-dark: #334155;
+  --color-text: #0F172A;
+  --color-text-dark: #F8FAFC;
+  --color-text-secondary: #64748B;
+  --color-text-secondary-dark: #94A3B8;
+  --color-border: #CBD5E1;
+  --color-border-dark: #334155;
+  --color-input: #FFFFFF;
+  --color-input-dark: #0B1120;
+  --color-card: #FFFFFF;
+  --color-card-dark: #0B1120;
+}
+
 /* ============================================================
-   RUTACERO DESIGN SYSTEM - Uber-inspired Transportation Platform
+   RUTACERO DESIGN SYSTEM - Premium azul/celeste mobility
    ============================================================ */
 
 :root {
-  /* Color Palette - Exact Uber-inspired specification */
-  --color-primary: #0F8A5F;
+  /* Color Palette - RutaCero azul/celeste premium */
+  --color-primary: #0B7CC0;
+  --color-primary-dark: #085E9A;
+  --color-accent: #22D3EE;
   --color-background: #FFFFFF;
-  --color-secondary: #F6F7F8;
-  --color-muted: #E5E7EB;
-  --color-success: #0F8A5F;
-  --color-text: #111827;            /* Primary Text */
-  --color-text-secondary: #6B7280;  /* Secondary Text */
+  --color-canvas: #F8FAFC;
+  --color-secondary: #F1F5F9;
+  --color-muted: #CBD5E1;
+  --color-text: #0F172A;            /* Primary Text */
+  --color-text-secondary: #64748B;  /* Secondary Text */
 
   /* Semantic color mappings */
   --color-border: var(--color-muted);
-  --color-border-hover: #D1D5DB;
+  --color-border-hover: #94A3B8;
   --color-input-bg: var(--color-background);
   --color-input-border: var(--color-muted);
-  --color-input-focus: var(--color-success);
+  --color-input-focus: var(--color-primary);
   --color-card-bg: var(--color-background);
   --color-card-border: var(--color-muted);
-  --color-overlay: rgba(0, 0, 0, 0.5);
-  --color-overlay-light: rgba(0, 0, 0, 0.04);
+  --color-overlay: rgba(15, 23, 42, 0.5);
+  --color-overlay-light: rgba(15, 23, 42, 0.04);
 
   /* Typography - System font stack for performance */
   --font-sans: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -100,20 +126,21 @@
   --container-2xl: 1536px;
 }
 
-/* Dark mode - subtle, not inverted */
+/* Dark mode - sutil, no invertido */
 .dark {
-  --color-background: #0F0F0F;
-  --color-secondary: #1A1A1A;
-  --color-muted: #2A2A2A;
-  --color-border: #333333;
-  --color-border-hover: #444444;
-  --color-text: #F5F5F5;
-  --color-text-secondary: #A3A3A3;
-  --color-input-bg: #1A1A1A;
-  --color-input-border: #333333;
-  --color-input-focus: #16A34A;
-  --color-card-bg: #1A1A1A;
-  --color-card-border: #333333;
+  --color-background: #0F172A;
+  --color-canvas: #0B1120;
+  --color-secondary: #1E293B;
+  --color-muted: #334155;
+  --color-border: #334155;
+  --color-border-hover: #475569;
+  --color-text: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-input-bg: #0B1120;
+  --color-input-border: #334155;
+  --color-input-focus: #22D3EE;
+  --color-card-bg: #0B1120;
+  --color-card-border: #334155;
   --color-overlay: rgba(0, 0, 0, 0.7);
   --color-overlay-light: rgba(255, 255, 255, 0.04);
 }
@@ -155,6 +182,48 @@ body {
 ::selection {
   background-color: var(--color-primary);
   color: var(--color-background);
+}
+
+/* ============================================================
+   MODAL & BOTTOM SHEET
+   ============================================================ */
+
+.modal {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 32rem;
+  border-radius: var(--radius-2xl);
+  background-color: var(--color-card-bg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-2xl);
+}
+
+@media (min-width: 640px) {
+  .modal {
+    max-width: 36rem;
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+  }
+}
+
+.bottom-sheet {
+  position: absolute;
+  inset-x: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  border-top-left-radius: var(--radius-2xl);
+  border-top-right-radius: var(--radius-2xl);
+  background-color: var(--color-card-bg);
+  box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.12);
+}
+
+@media (min-width: 640px) {
+  .bottom-sheet {
+    max-height: 62vh;
+  }
 }
 
 /* Scrollbar */
@@ -268,7 +337,7 @@ body {
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #1a1a1a;
+  background-color: var(--color-primary-dark);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
@@ -290,16 +359,21 @@ body {
   border-color: var(--color-border-hover);
 }
 
-.btn-success {
-  background-color: var(--color-success);
-  color: var(--color-background);
+.btn-accent {
+  background-color: var(--color-accent);
+  color: var(--color-text);
   box-shadow: var(--shadow-sm);
 }
 
-.btn-success:hover:not(:disabled) {
-  background-color: #15803d;
+.btn-accent:hover:not(:disabled) {
+  background-color: #06B6D4;
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
+}
+
+.btn-accent:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn-ghost {
@@ -315,6 +389,12 @@ body {
   padding: var(--space-2) var(--space-4);
   font-size: var(--text-xs);
   border-radius: var(--radius-lg);
+}
+
+.btn-md {
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-xl);
 }
 
 .btn-lg {
@@ -374,7 +454,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-success);
+  color: var(--color-primary);
   pointer-events: none;
 }
 
@@ -397,11 +477,11 @@ body {
 }
 
 .input-success {
-  border-color: var(--color-success);
+  border-color: var(--color-primary);
 }
 
 .input-success:focus {
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+  box-shadow: 0 0 0 3px rgba(11, 124, 192, 0.2);
 }
 
 /* Card */
@@ -441,9 +521,9 @@ body {
   color: var(--color-background);
 }
 
-.badge-success {
-  background-color: rgba(22, 163, 74, 0.1);
-  color: var(--color-success);
+.badge-accent {
+  background-color: var(--color-accent);
+  color: var(--color-text);
 }
 
 .badge-secondary {
@@ -452,9 +532,10 @@ body {
   border: 1px solid var(--color-border);
 }
 
-.badge-warning {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #D97706;
+.badge-outline {
+  background-color: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
 }
 
 /* Progress Bar */
@@ -468,9 +549,16 @@ body {
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-success), #22C55E);
   border-radius: var(--radius-full);
   transition: width var(--transition-slow);
+}
+
+.progress-primary {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
+}
+
+.progress-accent {
+  background: linear-gradient(90deg, var(--color-accent), #06B6D4);
 }
 
 /* Divider */
@@ -578,17 +666,17 @@ body {
 }
 
 .rc-marker-origin {
-  background-color: #111827;
+  background-color: var(--color-primary);
   color: white;
 }
 
 .rc-marker-stop {
-  background-color: var(--color-success);
-  color: white;
+  background-color: var(--color-accent);
+  color: var(--color-text);
 }
 
 .rc-marker-destination {
-  background-color: var(--color-success);
+  background-color: var(--color-primary);
   color: white;
 }
 

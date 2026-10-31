@@ -36,18 +36,16 @@ export function Modal({ open, title, onClose, children, className }: ModalProps)
         aria-modal="true"
         aria-labelledby="modal-title"
         className={cn(
-          'relative z-10 w-full max-w-lg rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-6 dark:bg-neutral-900',
+          'modal',
           className,
         )}
       >
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 id="modal-title" className="text-lg font-semibold text-neutral-900 dark:text-white">
-            {title}
-          </h2>
+          <h2 id="modal-title" className="text-lg font-semibold">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-text-secondary dark:bg-muted dark:text-text-secondary"
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" />

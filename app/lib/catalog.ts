@@ -1,14 +1,21 @@
-import type {
-  AppNotification,
-  Conversation,
-  LedgerEntry,
-  PaymentMethod,
-  Profile,
-  Trip,
-} from './types';
+import type { Trip } from './types';
 
+export type PuntoCali = {
+  nombre: string;
+  lat: number;
+  lng: number;
+};
+
+/**
+ * Ubicación predeterminada del usuario en Cali. Sirve de ancla para el mapa
+ y los formularios cuando no hay una selección previa.
+ */
 export const CURRENT_LOCATION = 'Ciudad Jardín';
 
+/**
+ * Destinos frecuentes del corredor universitario de Cali.
+ * Se muestran como atajos en la pantalla de inicio.
+ */
 export const FREQUENT_DESTINATIONS = [
   'Universidad Icesi',
   'Pontificia Universidad Javeriana Cali',
@@ -17,232 +24,136 @@ export const FREQUENT_DESTINATIONS = [
   'Jardín Plaza',
 ] as const;
 
-export const profile: Profile = {
-  name: 'Camila Restrepo',
-  email: 'camila.restrepo@icesi.edu.co',
-  phone: '3158472910',
-  career: 'Ingeniería Industrial',
-  university: 'Universidad Icesi',
-  trips: 12,
-  rating: 4.9,
-  memberSince: 'Marzo 2025',
-};
-
-export const trips: Trip[] = [
-  {
-    id: 'rc-icesi-am',
-    origin: 'Unicentro Cali',
-    destination: 'Universidad Icesi',
-    driver: {
-      id: 'd-andres',
-      name: 'Andrés Molina',
-      rating: 4.94,
-      trips: 86,
-      vehicle: 'Mazda 2 blanco',
-      plate: 'KFT-284',
-      university: 'Universidad Icesi',
-    },
-    seats: 3,
-    seatsTaken: 1,
-    price: 4500,
-    departure: '06:50',
-    arrival: '07:15',
-    dateLabel: 'Hoy',
-    corridor: 'Cali Sur',
-    notes: 'Salida puntual. Mochilas en el maletero.',
-    status: 'disponible',
-  },
-  {
-    id: 'rc-jav-am',
-    origin: 'Holguines Trade Center',
-    destination: 'Pontificia Universidad Javeriana Cali',
-    driver: {
-      id: 'd-laura',
-      name: 'Laura Cárdenas',
-      rating: 4.98,
-      trips: 121,
-      vehicle: 'Kia Picanto gris',
-      plate: 'HPL-519',
-      university: 'Javeriana Cali',
-    },
-    seats: 2,
-    seatsTaken: 0,
-    price: 5000,
-    departure: '07:05',
-    arrival: '07:22',
-    dateLabel: 'Hoy',
-    corridor: 'Cañasgordas',
-    status: 'disponible',
-  },
-  {
-    id: 'rc-uao-am',
-    origin: 'Ciudad Jardín',
-    destination: 'Universidad Autónoma de Occidente (UAO)',
-    driver: {
-      id: 'd-diego',
-      name: 'Diego Vargas',
-      rating: 4.87,
-      trips: 54,
-      vehicle: 'Chevrolet Onix negro',
-      plate: 'SWQ-073',
-      university: 'UAO',
-    },
-    seats: 3,
-    seatsTaken: 2,
-    price: 4500,
-    departure: '06:40',
-    arrival: '07:05',
-    dateLabel: 'Hoy',
-    corridor: 'Cali Sur',
-    status: 'disponible',
-  },
-  {
-    id: 'rc-univalle',
-    origin: 'Jardín Plaza',
-    destination: 'Universidad del Valle (Meléndez)',
-    driver: {
-      id: 'd-sofia',
-      name: 'Sofía Herrera',
-      rating: 4.91,
-      trips: 67,
-      vehicle: 'Renault Logan azul',
-      plate: 'TBN-441',
-      university: 'Univalle',
-    },
-    seats: 3,
-    seatsTaken: 1,
-    price: 4500,
-    departure: '12:10',
-    arrival: '12:35',
-    dateLabel: 'Hoy',
-    corridor: 'Meléndez',
-    status: 'disponible',
-  },
-  {
-    id: 'rc-pance-pm',
-    origin: 'Universidad Icesi',
-    destination: 'Unicentro Cali',
-    driver: {
-      id: 'd-andres',
-      name: 'Andrés Molina',
-      rating: 4.94,
-      trips: 86,
-      vehicle: 'Mazda 2 blanco',
-      plate: 'KFT-284',
-      university: 'Universidad Icesi',
-    },
-    seats: 3,
-    seatsTaken: 0,
-    price: 4500,
-    departure: '17:20',
-    arrival: '17:45',
-    dateLabel: 'Hoy',
-    corridor: 'Cali Sur',
-    notes: 'Regreso al norte. Aire acondicionado.',
-    status: 'disponible',
-  },
-  {
-    id: 'rc-centro',
-    origin: 'San Antonio',
-    destination: 'Universidad Icesi',
-    driver: {
-      id: 'd-camilo',
-      name: 'Camilo Ríos',
-      rating: 4.82,
-      trips: 33,
-      vehicle: 'Toyota Yaris plateado',
-      plate: 'VLM-902',
-      university: 'Universidad Icesi',
-    },
-    seats: 2,
-    seatsTaken: 2,
-    price: 5000,
-    departure: '06:20',
-    arrival: '07:00',
-    dateLabel: 'Hoy',
-    corridor: 'Centro → Sur',
-    status: 'lleno',
-  },
-];
-
+/**
+ * Historial reciente de búsquedas del usuario.
+ * Se usa solo como catálogo de atajos locales; sin datos simulados de viaje.
+ */
 export const recentSearches = [
   { origin: 'Unicentro Cali', destination: 'Universidad Icesi' },
   { origin: 'Holguines Trade Center', destination: 'Pontificia Universidad Javeriana Cali' },
   { origin: 'Ciudad Jardín', destination: 'Universidad Autónoma de Occidente (UAO)' },
 ];
 
-export const paymentMethods: PaymentMethod[] = [
-  { id: 'nequi', label: 'Nequi', detail: '**** 2910', type: 'nequi' },
-  { id: 'daviplata', label: 'Daviplata', detail: '**** 8472', type: 'daviplata' },
-];
+// Catálogo local de puntos en Cali (alineado con el servicio de mapas).
+// Permite resolver origen y destino sin el API Python en local.
+export const PUNTOS_BASE_CALI: Record<string, PuntoCali> = {
+  'Universidad Icesi': { nombre: 'Universidad Icesi', lat: 3.3418, lng: -76.5303 },
+  'Pontificia Universidad Javeriana Cali': { nombre: 'Pontificia Universidad Javeriana Cali', lat: 3.3486, lng: -76.5322 },
+  'Universidad Autónoma de Occidente (UAO)': { nombre: 'Universidad Autónoma de Occidente (UAO)', lat: 3.3536, lng: -76.5239 },
+  'Universidad del Valle (Meléndez)': { nombre: 'Universidad del Valle (Meléndez)', lat: 3.375, lng: -76.5335 },
+  'Unicentro Cali': { nombre: 'Unicentro Cali', lat: 3.3768, lng: -76.537 },
+  'Holguines Trade Center': { nombre: 'Holguines Trade Center', lat: 3.369, lng: -76.5285 },
+  'Jardín Plaza': { nombre: 'Jardín Plaza', lat: 3.3675, lng: -76.532 },
+  'Valle del Lili': { nombre: 'Valle del Lili', lat: 3.336, lng: -76.525 },
+  'Ciudad Jardín': { nombre: 'Ciudad Jardín', lat: 3.3644, lng: -76.5342 },
+  'Cañasgordas / Pance': { nombre: 'Cañasgordas / Pance', lat: 3.332, lng: -76.535 },
+  'Menga / Chipichape (Norte)': { nombre: 'Menga / Chipichape (Norte)', lat: 3.4735, lng: -76.5262 },
+  'Centro de Cali': { nombre: 'Centro de Cali', lat: 3.4516, lng: -76.532 },
+  'Meléndez': { nombre: 'Meléndez', lat: 3.3595, lng: -76.54 },
+  'Santa Anita': { nombre: 'Santa Anita', lat: 3.354, lng: -76.538 },
+  'Pasoancho con 66 / La 14 de Pasoancho': { nombre: 'Pasoancho con 66 / La 14 de Pasoancho', lat: 3.385, lng: -76.532 },
+  'Calle 5ta / Calle 5': { nombre: 'Calle 5ta / Calle 5', lat: 3.41, lng: -76.54 },
+  'San Antonio': { nombre: 'San Antonio', lat: 3.4445, lng: -76.5405 },
+};
 
-export const ledger: LedgerEntry[] = [
-  { id: 'l1', label: 'Cupo · Unicentro → Icesi', amount: -4500, at: 'Ayer, 07:12', type: 'cargo' },
-  { id: 'l2', label: 'Cupo · Holguines → Javeriana', amount: -5000, at: 'Lun, 07:18', type: 'cargo' },
-  { id: 'l3', label: 'Ajuste de tarifa justa', amount: 500, at: 'Lun, 18:02', type: 'abono' },
-];
+// Aliases normalizados (sin tildes) → nombre canónico, como en maps_service.py.
+const ALIASES: Record<string, string> = {
+  cenco: 'Unicentro Cali',
+  unicentro: 'Unicentro Cali',
+  'unicentro cali': 'Unicentro Cali',
+  holgui: 'Holguines Trade Center',
+  holguines: 'Holguines Trade Center',
+  'holguines trade center': 'Holguines Trade Center',
+  trade: 'Holguines Trade Center',
+  lili: 'Valle del Lili',
+  'valle del lili': 'Valle del Lili',
+  clinica: 'Valle del Lili',
+  icesi: 'Universidad Icesi',
+  'universidad icesi': 'Universidad Icesi',
+  jav: 'Pontificia Universidad Javeriana Cali',
+  javeriana: 'Pontificia Universidad Javeriana Cali',
+  uao: 'Universidad Autónoma de Occidente (UAO)',
+  autonoma: 'Universidad Autónoma de Occidente (UAO)',
+  univalle: 'Universidad del Valle (Meléndez)',
+  'universidad del valle': 'Universidad del Valle (Meléndez)',
+  valle: 'Universidad del Valle (Meléndez)',
+  jardin: 'Ciudad Jardín',
+  'ciudad jardin': 'Ciudad Jardín',
+  plaza: 'Jardín Plaza',
+  'jardin plaza': 'Jardín Plaza',
+  pance: 'Cañasgordas / Pance',
+  canasgordas: 'Cañasgordas / Pance',
+  chipichape: 'Menga / Chipichape (Norte)',
+  menga: 'Menga / Chipichape (Norte)',
+  centro: 'Centro de Cali',
+  'centro de cali': 'Centro de Cali',
+  melendez: 'Meléndez',
+  'santa anita': 'Santa Anita',
+  pasoancho: 'Pasoancho con 66 / La 14 de Pasoancho',
+  'calle 5': 'Calle 5ta / Calle 5',
+  'san antonio': 'San Antonio',
+};
 
-export const seedConversations: Conversation[] = [
-  {
-    id: 'c-andres',
-    tripId: 'rc-icesi-am',
-    peerName: 'Andrés Molina',
-    peerRole: 'conductor',
-    lastMessage: 'Te recojo en la torre norte de Unicentro.',
-    lastAt: '07:02',
-    unread: 1,
-    messages: [
-      { id: 'm1', from: 'peer', text: 'Buenos días, Camila. Confirma el PIN al subir.', at: '06:41' },
-      { id: 'm2', from: 'yo', text: 'Listo. Estaré en la torre norte.', at: '06:44' },
-      { id: 'm3', from: 'peer', text: 'Te recojo en la torre norte de Unicentro.', at: '07:02' },
-    ],
-  },
-  {
-    id: 'c-laura',
-    tripId: 'rc-jav-am',
-    peerName: 'Laura Cárdenas',
-    peerRole: 'conductor',
-    lastMessage: 'Mañana salgo a las 7:05.',
-    lastAt: 'Ayer',
-    unread: 0,
-    messages: [
-      { id: 'm4', from: 'peer', text: 'Mañana salgo a las 7:05.', at: 'Ayer' },
-      { id: 'm5', from: 'yo', text: 'Perfecto, gracias Laura.', at: 'Ayer' },
-    ],
-  },
-];
+/** Normaliza texto: minúsculas, sin tildes, sin espacios extra. */
+export function normalizar(texto: string): string {
+  return (texto || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim();
+}
 
-export const seedNotifications: AppNotification[] = [
-  {
-    id: 'n1',
-    title: 'Cupo confirmado',
-    body: 'Andrés sale a las 06:50 desde Unicentro. Lleva tu PIN al abordar.',
-    at: 'Hace 12 min',
-    read: false,
-    href: '/historial',
-  },
-  {
-    id: 'n2',
-    title: 'Ruta de la tarde',
-    body: 'Hay 3 cupos Icesi → Unicentro a las 17:20.',
-    at: 'Hace 1 h',
-    read: false,
-    href: '/buscar?origen=Universidad%20Icesi&destino=Unicentro%20Cali',
-  },
-  {
-    id: 'n3',
-    title: 'Pago registrado',
-    body: 'Se debitaron $4.500 COP por el viaje de ayer.',
-    at: 'Ayer',
-    read: true,
-    href: '/pagos',
-  },
-];
+/** Devuelve hasta 6 sugerencias (nombres canónicos) que matchean el texto. */
+export function buscarSugerencias(consulta: string): string[] {
+  const q = normalizar(consulta);
+  if (!q) return [];
+  const directas = Object.keys(PUNTOS_BASE_CALI).filter((n) =>
+    normalizar(n).includes(q),
+  );
+  const porAlias = Object.entries(ALIASES)
+    .filter(([alias]) => alias.includes(q))
+    .map(([, nombre]) => nombre);
+  return Array.from(new Set([...directas, ...porAlias])).slice(0, 6);
+}
 
+/**
+ * Resuelve texto libre → PuntoCali. Nunca devuelve un punto fuera de Cali:
+ * si no encuentra coincidencia, ancla al corredor universitario de Cañasgordas
+ * (mismo comportamiento que maps_service.resolver_coordenada).
+ */
+export function resolverPunto(texto: string): PuntoCali {
+  const norm = normalizar(texto);
+  if (!norm) return PUNTOS_BASE_CALI['Cañasgordas / Pance'];
+
+  const directa = Object.keys(PUNTOS_BASE_CALI).find((n) => normalizar(n) === norm);
+  if (directa) return PUNTOS_BASE_CALI[directa];
+
+  const nombrePorAlias = Object.entries(ALIASES).find(([alias]) => alias === norm);
+  if (nombrePorAlias) return PUNTOS_BASE_CALI[nombrePorAlias[1]];
+
+  const porSubstring = Object.keys(PUNTOS_BASE_CALI).find((n) => normalizar(n).includes(norm));
+  if (porSubstring) return PUNTOS_BASE_CALI[porSubstring];
+
+  const aliasPorSubstring = Object.entries(ALIASES).find(([alias]) => norm.includes(alias) || alias.includes(norm));
+  if (aliasPorSubstring) return PUNTOS_BASE_CALI[aliasPorSubstring[1]];
+
+  return PUNTOS_BASE_CALI['Cañasgordas / Pance'];
+}
+
+/**
+ * Catálogo de viajes publicados. Inicia vacío: sin datos simulados ni de demostración.
+ * Los viajes se agregan únicamente cuando un usuario publica una ruta real.
+ */
+export const catalogTrips: Trip[] = [];
+
+/**
+ * Busca viajes publicados que coincidan con origen/destino.
+ * Retorna vacíos mientras no haya viajes publicados en el catálogo.
+ */
 export function matchTrips(origin: string, destination: string): Trip[] {
   const o = origin.trim().toLowerCase();
   const d = destination.trim().toLowerCase();
-  return trips.filter((trip) => {
+  return catalogTrips.filter((trip) => {
     const originHit = !o || trip.origin.toLowerCase().includes(o) || o.includes(trip.origin.toLowerCase().slice(0, 8));
     const destHit =
       !d || trip.destination.toLowerCase().includes(d) || d.includes(trip.destination.toLowerCase().slice(0, 8));
@@ -250,6 +161,10 @@ export function matchTrips(origin: string, destination: string): Trip[] {
   });
 }
 
+/** Obtiene un viaje por su ID del catálogo. */
 export function getTrip(id: string): Trip | undefined {
-  return trips.find((trip) => trip.id === id);
+  return catalogTrips.find((trip) => trip.id === id);
 }
+
+/** Alias de compatibilidad para el catálogo de viajes (inicialmente vacío). */
+export const trips = catalogTrips;

@@ -36,19 +36,19 @@ export const RideCard = memo(function RideCard({
     <Card padding="none" className="overflow-hidden">
       <CardContent className="p-0">
         {/* Avatar + nombre + carrera + badge */}
-        <div className="flex items-center gap-3 p-4 pb-3 border-b border-neutral-200 dark:border-neutral-700">
+        <div className="flex items-center gap-3 p-4 pb-3 border-b border-border dark:border-border-dark">
           <span
             aria-hidden="true"
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-            style={{ backgroundColor: '#16A34A' }}
+            style={{ backgroundColor: '#0B7CC0' }}
           >
             {getInitials(passengerName)}
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-base font-semibold leading-tight text-neutral-900 dark:text-white">
+            <h3 className="truncate text-base font-semibold leading-tight text-text">
               {passengerName}
             </h3>
-            <p className="flex items-center gap-1.5 truncate text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="flex items-center gap-1.5 truncate text-sm text-text-secondary">
               <GraduationCap className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {career}
             </p>
@@ -59,33 +59,33 @@ export const RideCard = memo(function RideCard({
         </div>
 
         {/* Progress bar towards next level */}
-        <div className="px-4 pt-3 pb-2 border-b border-neutral-200 dark:border-neutral-700">
-          <Progress value={percent} max={100} size="sm" color="success" />
-          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400 text-center">
+        <div className="px-4 pt-3 pb-2 border-b border-border dark:border-border-dark">
+          <Progress value={percent} max={100} size="sm" color="primary" />
+          <p className="mt-1.5 text-xs text-text-secondary text-center">
             {remainingText}
           </p>
         </div>
 
         {/* Precio destacado + hora de recogida */}
-        <div className="flex items-end justify-between px-4 py-4 border-b border-neutral-200 dark:border-neutral-700">
+        <div className="flex items-end justify-between px-4 py-4 border-b border-border dark:border-border-dark">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+            <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">
               Tarifa justa
             </p>
-            <p className="mt-0.5 text-3xl font-extrabold leading-none tracking-tight text-green-600 dark:text-green-400">
+            <p className="mt-0.5 text-3xl font-extrabold leading-none tracking-tight text-primary">
               {formatCOP(priceCOP)}
             </p>
-            <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+            <p className="mt-1 text-xs text-text-secondary">
               {tripCount} viaje{tripCount !== 1 ? 's' : ''}
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-neutral-100 px-3 py-2 dark:bg-neutral-800/60">
-            <Clock className="h-4 w-4 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+          <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2 dark:bg-muted/30">
+            <Clock className="h-4 w-4 text-text-secondary" aria-hidden="true" />
             <div className="leading-none text-right">
-              <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+              <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">
                 Recogida
               </p>
-              <p className="text-sm font-bold text-neutral-900 dark:text-white">
+              <p className="text-sm font-bold text-text">
                 {pickupTime}
               </p>
             </div>
@@ -93,9 +93,9 @@ export const RideCard = memo(function RideCard({
         </div>
 
         {/* Info de recogida */}
-        <div className="flex items-start gap-2 px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
-          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-400" aria-hidden="true" />
-          <p className="text-sm leading-snug text-neutral-600 dark:text-neutral-300">
+        <div className="flex items-start gap-2 px-4 py-3 border-b border-border dark:border-border-dark">
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <p className="text-sm leading-snug text-text-secondary dark:text-text-secondary">
             {pickupTime} · {pickupLocation}
           </p>
         </div>
@@ -103,12 +103,12 @@ export const RideCard = memo(function RideCard({
         {/* PIN de seguridad */}
         <div className="p-4">
           {isOnBoard ? (
-            <div className="flex items-center justify-center gap-2 rounded-xl bg-green-500 px-4 py-2.5 text-sm font-semibold text-white">
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white">
               <Lock className="h-4 w-4" aria-hidden="true" />
               A bordo · Viaje seguro
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-green-500/40 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-700 dark:bg-green-900/20 dark:border-green-500/30 dark:text-green-400">
+            <div className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-canvas px-4 py-2.5 text-sm font-semibold text-primary dark:bg-primary/20 dark:border-primary/30 dark:text-primary">
               <KeyRound className="h-4 w-4" aria-hidden="true" />
               PIN de seguridad: {pin}
             </div>

@@ -25,6 +25,7 @@ interface InteractiveMapProps {
 
 function FitRoute({ points }: { points: [number, number][] }) {
   const map = useMap();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (points.length < 2) return;
     map.fitBounds(points, { padding: [48, 48], maxZoom: 14 });
@@ -90,25 +91,25 @@ export default function InteractiveMap({ routeData, className }: InteractiveMapP
       {routeData && (
         <>
           <FitRoute points={points} />
-          <Polyline positions={points} color="#0F8A5F" weight={5} opacity={0.92} lineCap="round" lineJoin="round" />
+          <Polyline positions={points} color="#0B7CC0" weight={5} opacity={0.92} lineCap="round" lineJoin="round" />
           <Marker position={[routeData.origen.lat, routeData.origen.lng]} icon={icons.origin}>
             <Popup closeButton={false}>
               <p className="font-semibold">{routeData.origen.name}</p>
-              <p className="text-sm text-neutral-500">{routeData.origen.estimatedTime ?? 'Origen'}</p>
+              <p className="text-sm text-text-secondary">{routeData.origen.estimatedTime ?? 'Origen'}</p>
             </Popup>
           </Marker>
           {routeData.paradas.map((stop, idx) => (
             <Marker key={`${stop.name}-${idx}`} position={[stop.lat, stop.lng]} icon={icons.stop(idx + 1)}>
               <Popup closeButton={false}>
                 <p className="font-semibold">{stop.name}</p>
-                <p className="text-sm text-neutral-500">{stop.estimatedTime ?? 'Parada'}</p>
+                <p className="text-sm text-text-secondary">{stop.estimatedTime ?? 'Parada'}</p>
               </Popup>
             </Marker>
           ))}
           <Marker position={[routeData.destino.lat, routeData.destino.lng]} icon={icons.destination}>
             <Popup closeButton={false}>
               <p className="font-semibold">{routeData.destino.name}</p>
-              <p className="text-sm text-neutral-500">{routeData.destino.estimatedTime ?? 'Destino'}</p>
+              <p className="text-sm text-text-secondary">{routeData.destino.estimatedTime ?? 'Destino'}</p>
             </Popup>
           </Marker>
         </>

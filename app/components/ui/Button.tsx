@@ -4,7 +4,7 @@ import { forwardRef, ButtonHTMLAttributes } from 'react';
 import { cn } from '@/app/lib/design-system';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'success' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'accent' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   loading?: boolean;
@@ -12,26 +12,17 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ children, variant = 'primary', size = 'md', fullWidth = false, loading = false, disabled, className, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center gap-2 font-semibold rounded-2xl transition-all duration-150 ease-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-
-    const variants = {
-      primary: 'bg-neutral-950 text-white shadow-sm hover:bg-neutral-800 hover:shadow-md active:shadow-xs focus:ring-neutral-900',
-      secondary: 'bg-white text-neutral-900 border border-neutral-200 shadow-xs hover:bg-neutral-50 hover:border-neutral-300 focus:ring-neutral-400 dark:bg-neutral-900 dark:text-white dark:border-neutral-700 dark:hover:bg-neutral-800',
-      success: 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 hover:shadow-md active:shadow-xs focus:ring-emerald-500',
-      ghost: 'bg-transparent text-neutral-900 hover:bg-neutral-100 focus:ring-neutral-400 dark:text-white dark:hover:bg-neutral-800',
-    };
-
-    const sizes = {
-      sm: 'px-3 py-2 text-xs rounded-xl',
-      md: 'px-5 py-3 text-sm rounded-2xl',
-      lg: 'px-7 py-4 text-base rounded-3xl',
-    };
-
     return (
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={cn(baseStyles, variants[variant], sizes[size], fullWidth && 'w-full', className)}
+        className={cn(
+          'btn',
+          `btn-${variant}`,
+          size !== 'md' && `btn-${size}`,
+          fullWidth && 'btn-full',
+          className
+        )}
         {...props}
       >
         {loading && (

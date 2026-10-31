@@ -2,18 +2,12 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { generatePin } from './design-system';
-import {
-  ledger as seedLedger,
-  paymentMethods,
-  profile,
-  seedConversations,
-  seedNotifications,
-  trips as catalogTrips,
-} from './catalog';
+import { trips as catalogTrips } from './catalog';
 import type {
   AppNotification,
   Conversation,
   LedgerEntry,
+  PaymentMethod,
   PublishedRoute,
   Reservation,
 } from './types';
@@ -52,14 +46,17 @@ function nowLabel() {
   return new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 }
 
+/** Métodos de pago del usuario. Inicia vacío: sin datos de demostración. */
+export const paymentMethods: PaymentMethod[] = [];
+
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [published, setPublished] = useState<PublishedRoute[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>(seedConversations);
-  const [notifications, setNotifications] = useState<AppNotification[]>(seedNotifications);
-  const [ledger, setLedger] = useState<LedgerEntry[]>(seedLedger);
-  const [balance, setBalance] = useState(18500);
-  const [preferredPayment, setPreferredPayment] = useState(paymentMethods[0].id);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
+  const [balance, setBalance] = useState(0);
+  const [preferredPayment, setPreferredPayment] = useState(paymentMethods[0]?.id ?? '');
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -69,14 +66,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(raw) as Persisted;
         setReservations(parsed.reservations ?? []);
         setPublished(parsed.published ?? []);
-        setConversations(parsed.conversations?.length ? parsed.conversations : seedConversations);
-        setNotifications(parsed.notifications?.length ? parsed.notifications : seedNotifications);
-        setLedger(parsed.ledger?.length ? parsed.ledger : seedLedger);
-        setBalance(typeof parsed.balance === 'number' ? parsed.balance : 18500);
-        setPreferredPayment(parsed.preferredPayment ?? paymentMethods[0].id);
+        setConversations(parsed.conversations ?? []);
+        setNotifications(parsed.notifications ?? []);
+        setLedger(parsed.ledger ?? []);
+        setBalance(typeof parsed.balance === 'number' ? parsed.balance : 0);
+        setPreferredPayment(parsed.preferredPayment ?? paymentMethods[0]?.id ?? '');
       }
     } catch {
-      /* keep seeds */
+      /* keep empty initial state */
     }
     setHydrated(true);
   }, []);
@@ -228,4 +225,3 @@ export function useAppState() {
   return ctx;
 }
 
-export { profile, paymentMethods };

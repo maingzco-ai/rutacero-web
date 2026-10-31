@@ -7,11 +7,11 @@ export interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
   value: number;
   max?: number;
   size?: 'sm' | 'md' | 'lg';
-  color?: 'success' | 'primary' | 'warning';
+  color?: 'primary' | 'accent';
 }
 
 export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
-  ({ value, max = 100, size = 'md', color = 'success', className, ...props }, ref) => {
+  ({ value, max = 100, size = 'md', color = 'primary', className, ...props }, ref) => {
     const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
     const sizes = {
@@ -21,15 +21,14 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
     };
 
     const colors = {
-      success: 'bg-gradient-to-r from-green-500 to-green-600',
-      primary: 'bg-gradient-to-r from-black to-neutral-700',
-      warning: 'bg-gradient-to-r from-amber-400 to-yellow-500',
+      primary: 'progress-primary',
+      accent: 'progress-accent',
     };
 
     return (
       <div
         ref={ref}
-        className={cn('w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700', sizes[size], className)}
+        className={cn('progress', sizes[size], className)}
         {...props}
         role="progressbar"
         aria-valuenow={percentage}
@@ -37,10 +36,7 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
         aria-valuemax={100}
       >
         <div
-          className={cn(
-            'h-full rounded-full transition-all duration-500 ease-out',
-            colors[color]
-          )}
+          className={cn('progress-bar', colors[color])}
           style={{ width: `${percentage}%` }}
         />
       </div>

@@ -1,12 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, Moon, ShieldCheck, Sun } from 'lucide-react';
+import { ChevronRight, ShieldCheck, Sun, Moon } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Progress } from '../ui/Progress';
-import { profile } from '@/app/lib/catalog';
 import { useAppState } from '@/app/lib/AppState';
 import { formatCOP, getInitials, getMembershipLevel, getMembershipProgress } from '@/app/lib/design-system';
 import { useTheme } from '@/app/hooks/useTheme';
@@ -21,48 +20,49 @@ const LINKS = [
 export default function ProfileExperience() {
   const { balance, unreadNotifications } = useAppState();
   const [theme, , setTheme] = useTheme();
-  const level = getMembershipLevel(profile.trips);
-  const progress = getMembershipProgress(profile.trips);
+  const level = getMembershipLevel(0);
+  const progress = getMembershipProgress(0);
 
   return (
     <div className="mx-auto max-w-lg px-4 py-4">
       <Card elevated className="flex items-center gap-4">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">
-          {getInitials(profile.name)}
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-lg font-bold text-white">
+          UC
         </span>
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold">{profile.name}</h1>
-          <p className="truncate text-sm text-neutral-500">{profile.email}</p>
+          <h1 className="text-xl font-semibold text-text">Mi perfil</h1>
+          <p className="truncate text-sm text-text-secondary">Inicia sesión para ver tu correo institucional</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <Badge variant="success">{level.label}</Badge>
-            <Badge variant="outline">{profile.university}</Badge>
+            <Badge variant="primary">{level.label}</Badge>
+            <Badge variant="outline">Sin universidad</Badge>
           </div>
         </div>
       </Card>
 
       <Card className="mt-4">
-        <p className="text-sm font-medium">{profile.career}</p>
-        <p className="mt-1 text-sm text-neutral-500">
-          {profile.trips} viajes · {profile.rating} de reputación · Miembro desde {profile.memberSince}
+        <p className="text-sm font-medium text-text-secondary">Carrera</p>
+        <p className="mt-1 text-sm text-text-secondary">Sin datos registrados</p>
+        <p className="mt-3 text-sm text-text-secondary">
+          0 viajes · 0 de reputación · Miembro desde —
         </p>
         <Progress className="mt-4" value={progress.percent} />
-        <p className="mt-2 text-xs text-neutral-500">{progress.remainingText}</p>
+        <p className="mt-2 text-xs text-text-secondary">{progress.remainingText}</p>
       </Card>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <Card padding="md">
-          <p className="text-xs text-neutral-500">Saldo</p>
-          <p className="mt-1 text-lg font-semibold">{formatCOP(balance)}</p>
+          <p className="text-xs text-text-secondary">Saldo</p>
+          <p className="mt-1 text-lg font-semibold text-text">{formatCOP(balance)}</p>
         </Card>
         <Card padding="md">
-          <p className="text-xs text-neutral-500">WhatsApp</p>
-          <p className="mt-1 text-lg font-semibold">{profile.phone}</p>
+          <p className="text-xs text-text-secondary">WhatsApp</p>
+          <p className="mt-1 text-lg font-semibold text-text">Sin número registrado</p>
         </Card>
       </div>
 
-      <div className="mt-4 flex items-center justify-between rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
-        <p className="text-sm font-medium">Apariencia</p>
-        <div className="flex gap-1 rounded-full bg-neutral-100 p-1 dark:bg-neutral-800">
+      <div className="mt-4 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 dark:border-border-dark dark:bg-card-dark">
+        <p className="text-sm font-medium text-text">Apariencia</p>
+        <div className="flex gap-1 rounded-full bg-secondary p-1 dark:bg-muted/30">
           <Button size="sm" variant={theme === 'light' ? 'primary' : 'ghost'} onClick={() => setTheme('light')} aria-label="Modo claro">
             <Sun className="h-4 w-4" />
           </Button>
@@ -72,17 +72,17 @@ export default function ProfileExperience() {
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-3xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card dark:border-border-dark dark:bg-card-dark">
         {LINKS.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="flex items-center justify-between border-b border-neutral-100 px-4 py-3 last:border-0 dark:border-neutral-800"
+            className="flex items-center justify-between border-b border-border px-4 py-3 last:border-0 dark:border-border-dark"
           >
-            <span className="text-sm font-medium">{item.label}</span>
-            <span className="flex items-center gap-2 text-neutral-400">
+            <span className="text-sm font-medium text-text">{item.label}</span>
+            <span className="flex items-center gap-2 text-text-secondary">
               {item.href === '/notificaciones' && unreadNotifications > 0 && (
-                <Badge variant="success" size="sm">
+                <Badge variant="primary" size="sm">
                   {unreadNotifications}
                 </Badge>
               )}
@@ -92,8 +92,8 @@ export default function ProfileExperience() {
         ))}
       </div>
 
-      <p className="mt-6 flex items-center gap-2 text-xs text-neutral-500">
-        <ShieldCheck className="h-4 w-4 text-emerald-600" />
+      <p className="mt-6 flex items-center gap-2 text-xs text-text-secondary">
+        <ShieldCheck className="h-4 w-4 text-primary" />
         Identidad institucional verificada. No vendemos datos.
       </p>
     </div>
