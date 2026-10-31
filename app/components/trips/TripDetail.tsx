@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Star } from 'lucide-react';
@@ -10,7 +10,9 @@ import { formatCOP, getInitials } from '@/app/lib/design-system';
 import { useAppState } from '@/app/lib/AppState';
 import { CURRENT_LOCATION } from '@/app/lib/catalog';
 import { resolverPunto } from '@/app/lib/mapsCali';
+import { calculateRoute, type CalculatedRoute } from '@/app/lib/routing';
 import type { Trip } from '@/app/lib/types';
+import { RouteDirections } from '../InteractiveMap';
 
 const InteractiveMap = dynamic(() => import('../InteractiveMap'), {
   ssr: false,
@@ -23,23 +25,52 @@ export default function TripDetail({ trip }: { trip: Trip }) {
   const [open, setOpen] = useState(false);
   const [preference, setPreference] = useState('Conversación ligera');
   const [pickup, setPickup] = useState(CURRENT_LOCATION);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [route, setRoute] = useState<CalculatedRoute | null>(null);
+
   const existing = reservations.find((item) => item.tripId === trip.id && item.status === 'confirmada');
   const available = trip.seats - trip.seatsTaken;
   const origin = resolverPunto(trip.origin);
   const dest = resolverPunto(trip.destination);
 
+  const routeData = useMemo(
+    () => ({
+      origen: { name: origin.nombre, lat: origin.lat, lng: origin.lng, estimatedTime: trip.departure },
+      destino: { name: dest.nombre, lat: dest.lat, lng: dest.lng, estimatedTime: trip.arrival },
+      paradas: [],
+    }),
+    [origin, dest, trip.departure, trip.arrival],
+  );
+
+  useMemo(() => {
+    let cancelled = false;
+    setRouteLoading(true);
+    calculateRoute(routeData.origen, routeData.destino)
+      .then((calculated) => {
+        if (!cancelled && calculated) {
+          setRoute(calculated);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setRouteLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [routeData]);
+
+  const routeSteps = useMemo(
+    () => ({ origin: origin.nombre, dest: dest.nombre }),
+    [origin, dest],
+  );
+
   return (
     <div className="mx-auto max-w-lg px-4 py-4">
       <div className="overflow-hidden rounded-3xl">
         <div className="h-56">
-          <InteractiveMap
-            routeData={{
-              origen: { name: origin.nombre, lat: origin.lat, lng: origin.lng, estimatedTime: trip.departure },
-              destino: { name: dest.nombre, lat: dest.lat, lng: dest.lng, estimatedTime: trip.arrival },
-              paradas: [],
-            }}
-          />
+          <InteractiveMap routeData={routeData} showDirections />
         </div>
+        <RouteDirections route={route} originName={routeSteps.origin} destName={routeSteps.dest} className="mt-3" />
       </div>
 
       <div className="mt-5 flex items-start gap-3">

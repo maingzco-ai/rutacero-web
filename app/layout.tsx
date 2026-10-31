@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://rutacero.co'),
   title: {
     default: `${brand.name} · ${brand.tagline}`,
     template: `%s · ${brand.name}`,
@@ -79,7 +80,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${inter.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-[#F6F7F8] font-sans text-neutral-900 dark:bg-neutral-950 dark:text-white">
+      <body className="min-h-full bg-canvas text-text font-sans dark:bg-background-dark dark:text-text-dark">
         <ThemeProvider>
           <AppStateProvider>{children}</AppStateProvider>
         </ThemeProvider>
