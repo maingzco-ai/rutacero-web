@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Route } from 'lucide-react';
 import { brand } from '@/app/lib/brand';
 
 export function OnboardingSplash({ onFinish }: { onFinish: () => void }) {
   const [progress, setProgress] = useState(0);
+  const onFinishRef = useRef(onFinish);
+  onFinishRef.current = onFinish;
 
   useEffect(() => {
     // Barra de carga progresiva durante ~3 segundos, llega a 100% y avanza
@@ -23,7 +25,7 @@ export function OnboardingSplash({ onFinish }: { onFinish: () => void }) {
       } else {
         // Al llegar al 100%, esperar un poco y avanzar
         timer = setTimeout(() => {
-          onFinish();
+          onFinishRef.current();
         }, 300);
       }
     };
@@ -33,7 +35,7 @@ export function OnboardingSplash({ onFinish }: { onFinish: () => void }) {
       if (raf) cancelAnimationFrame(raf);
       if (timer) clearTimeout(timer);
     };
-  }, [onFinish]);
+  }, []); // Sin dependencias: solo se ejecuta una vez al montar
 
   return (
     <div className="fixed inset-0 z-50 bg-canvas dark:bg-background-dark flex flex-col items-center justify-center text-center font-sans">
