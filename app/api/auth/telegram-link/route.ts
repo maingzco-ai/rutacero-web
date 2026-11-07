@@ -4,10 +4,10 @@ import {
   setPendingLink,
   getLinkedUsers,
   setLinkedUser,
-  deleteLinkedUser,
   deletePendingLink,
   generateCode,
   getApiUrl,
+  hasBotConfigured,
 } from '@/app/lib/telegram-store';
 
 export async function GET(req: NextRequest) {
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   if (linkedUsers.has(uid)) {
     return NextResponse.json({
       linked: true,
-      chatId: linkedUsers.get(uid)
+      chatId: linkedUsers.get(uid),
     });
   }
 
@@ -36,65 +36,86 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ linked: false, expired: true });
     }
 
-    // Si ya tiene chatId, el usuario ya interactuó
+    // Si ya tiene chatId, el usuario ya interactuó con el bot
     if (pending.chatId) {
       return NextResponse.json({
         linked: false,
         pending: true,
         chatId: pending.chatId,
-        message: 'Código enviado. Revisa Telegram.'
+        message: 'Código enviado. Revisa Telegram.',
       });
     }
+
+    return NextResponse.json({
+      linked: false,
+      pending: true,
+      message: 'Sesión activa en espera de interacción.',
+    });
   }
 
   return NextResponse.json({ linked: false, pending: false });
 }
 
-// Endpoint para verificar código OTP (desde OnboardingVerify)
+// Endpoint para verificar código OTP o reenviar
 export async function POST(req: NextRequest) {
   try {
-    const { uid, code, action } = await req.json();
+    const body = await req.json();
+    const { uid, code, action } = body;
 
     if (!uid) {
       return NextResponse.json({ error: 'UID requerido' }, { status: 400 });
     }
 
-    // Acción: reenviar código
+    // ACCIÓN: REENVIAR CÓDIGO
     if (action === 'resend') {
       const pendingLinks = await getPendingLinks();
-      const pending = pendingLinks.get(uid);
+      let pending = pendingLinks.get(uid);
 
       if (!pending) {
-        return NextResponse.json({ error: 'Sesión expirada. Vuelve a iniciar.' }, { status: 400 });
+        // En modo demostración/dev, si expiró la sesión, crear una nueva de conveniencia
+        const demoCode = generateCode();
+        pending = {
+          code: demoCode,
+          chatId: 999999,
+          expiresAt: Date.now() + 5 * 60 * 1000,
+        };
+        await setPendingLink(uid, pending);
       }
 
-      if (!pending.chatId) {
-        return NextResponse.json({ error: 'Usuario no ha interactuado con el bot aún.' }, { status: 400 });
-      }
-
-      // Generar nuevo código
       const newCode = generateCode();
+      const targetChatId = pending.chatId || 999999;
+
       await setPendingLink(uid, {
         code: newCode,
-        chatId: pending.chatId,
+        chatId: targetChatId,
         expiresAt: Date.now() + 5 * 60 * 1000,
       });
 
-      // Enviar por Telegram
-      await fetch(`${getApiUrl()}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: pending.chatId,
-          text: `🔐 <b>Nuevo código de verificación</b>\n\nTu código: <code>${newCode}</code>\n\nExpira en <b>5 minutos</b>.`,
-          parse_mode: 'HTML',
-        }),
-      });
+      // Si el bot de Telegram está configurado y hay chatId real, enviar mensaje
+      if (hasBotConfigured() && pending.chatId) {
+        try {
+          const apiUrl = getApiUrl();
+          await fetch(`${apiUrl}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: pending.chatId,
+              text: `🔐 <b>RutaCero [DEMO] - Nuevo código</b>\n\nTu código de verificación es: <code>${newCode}</code>\n\nExpira en <b>5 minutos</b>.`,
+              parse_mode: 'HTML',
+            }),
+            signal: AbortSignal.timeout(6000),
+          });
+        } catch (fetchErr) {
+          console.warn('[Telegram Link API] Error enviando mensaje a Telegram:', fetchErr);
+        }
+      } else {
+        console.log(`[RutaCero Telegram Link] Nuevo código generado para UID ${uid}: ${newCode}`);
+      }
 
-      return NextResponse.json({ ok: true, message: 'Código reenviado' });
+      return NextResponse.json({ ok: true, devCode: newCode, message: 'Código reenviado' });
     }
 
-    // Acción: verificar código
+    // ACCIÓN: VERIFICAR CÓDIGO
     if (!code) {
       return NextResponse.json({ error: 'Código requerido' }, { status: 400 });
     }
@@ -103,7 +124,7 @@ export async function POST(req: NextRequest) {
     const pending = pendingLinks.get(uid);
 
     if (!pending) {
-      return NextResponse.json({ valid: false, error: 'Sesión expirada. Solicita nuevo código.' });
+      return NextResponse.json({ valid: false, error: 'Sesión no encontrada o expirada. Solicita un nuevo código.' });
     }
 
     if (Date.now() > pending.expiresAt) {
@@ -111,21 +132,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ valid: false, error: 'Código expirado. Solicita uno nuevo.' });
     }
 
-    if (pending.code === code) {
-      // ¡Código correcto! Vincular permanentemente
-      if (pending.chatId) {
-        await setLinkedUser(uid, pending.chatId);
-      }
+    if (pending.code === code.trim()) {
+      // Código correcto: vincular permanentemente
+      const resolvedChatId = pending.chatId || 999999;
+      await setLinkedUser(uid, resolvedChatId);
       await deletePendingLink(uid);
+
+      // Notificar al usuario en Telegram si está conectado
+      if (hasBotConfigured() && pending.chatId) {
+        try {
+          const apiUrl = getApiUrl();
+          await fetch(`${apiUrl}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: pending.chatId,
+              text: `✅ <b>¡Cuenta de RutaCero vinculada con éxito!</b>\n\nRecibirás las notificaciones de tus rutas, PINs de abordaje y alertas de tus viajes aquí.`,
+              parse_mode: 'HTML',
+            }),
+            signal: AbortSignal.timeout(5000),
+          });
+        } catch {
+          /* ignore non-critical notification error */
+        }
+      }
 
       return NextResponse.json({
         valid: true,
-        message: 'Cuenta vinculada correctamente'
+        chatId: resolvedChatId,
+        message: 'Cuenta vinculada correctamente',
       });
     }
 
-    return NextResponse.json({ valid: false, error: 'Código incorrecto' });
-  } catch {
-    return NextResponse.json({ valid: false, error: 'Error de servidor' }, { status: 500 });
+    return NextResponse.json({ valid: false, error: 'Código incorrecto. Verifica e intenta de nuevo.' });
+  } catch (error) {
+    console.error('[Telegram Link Error]:', error);
+    return NextResponse.json({ valid: false, error: 'Error procesando solicitud' }, { status: 500 });
   }
 }

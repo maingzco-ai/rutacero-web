@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Star } from 'lucide-react';
@@ -25,7 +25,6 @@ export default function TripDetail({ trip }: { trip: Trip }) {
   const [open, setOpen] = useState(false);
   const [preference, setPreference] = useState('Conversación ligera');
   const [pickup, setPickup] = useState(CURRENT_LOCATION);
-  const [routeLoading, setRouteLoading] = useState(false);
   const [route, setRoute] = useState<CalculatedRoute | null>(null);
 
   const existing = reservations.find((item) => item.tripId === trip.id && item.status === 'confirmada');
@@ -42,20 +41,21 @@ export default function TripDetail({ trip }: { trip: Trip }) {
     [origin, dest, trip.departure, trip.arrival],
   );
 
-  useMemo(() => {
-    let cancelled = false;
-    setRouteLoading(true);
+  // Usar refs para evitar setState en effect durante la carga inicial
+  const cancelledRef = useRef(false);
+
+  useEffect(() => {
+    cancelledRef.current = false;
+
     calculateRoute(routeData.origen, routeData.destino)
       .then((calculated) => {
-        if (!cancelled && calculated) {
+        if (!cancelledRef.current && calculated) {
           setRoute(calculated);
         }
-      })
-      .finally(() => {
-        if (!cancelled) setRouteLoading(false);
       });
+
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
   }, [routeData]);
 

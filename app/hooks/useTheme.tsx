@@ -5,7 +5,7 @@
  * Handles dark/light mode without hydration mismatches
  */
 
-import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, startTransition, ReactNode } from 'react';
 import { useMounted } from './useMounted';
 
 type Theme = 'light' | 'dark';
@@ -24,8 +24,10 @@ export function useTheme(): [Theme, () => void, (theme: Theme) => void] {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initial = stored ?? (prefersDark ? 'dark' : 'light');
 
-    setThemeState(initial);
-    setResolved(true);
+    startTransition(() => {
+      setThemeState(initial);
+      setResolved(true);
+    });
 
     // Apply to document
     document.documentElement.classList.toggle('dark', initial === 'dark');
@@ -91,8 +93,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initial = stored ?? (prefersDark ? 'dark' : 'light');
 
-    setThemeState(initial);
-    setResolved(true);
+    startTransition(() => {
+      setThemeState(initial);
+      setResolved(true);
+    });
     document.documentElement.classList.toggle('dark', initial === 'dark');
   }, [mounted]);
 

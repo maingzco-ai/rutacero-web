@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Mail, ShieldCheck, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, ShieldCheck } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -11,29 +11,22 @@ const INSTITUTIONAL_DOMAINS = [
   { domain: 'u.icesi.edu.co', name: 'Universidad Icesi (u.icesi.edu.co)' },
   { domain: 'javerianacali.edu.co', name: 'Pontificia Universidad Javeriana Cali' },
   { domain: 'uao.edu.co', name: 'Universidad Autónoma de Occidente (UAO)' },
+  { domain: 'correounivalle.edu.co', name: 'Universidad del Valle (Univalle)' },
+  { domain: 'rutacero.co', name: 'RutaCero Equipo / Evaluador [DEMO]' },
 ];
 
 export function OnboardingEmail({ onSubmit }: { onSubmit: (email: string) => void }) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [isValid, setIsValid] = useState(false);
-  const [sendingCode, setSendingCode] = useState(false);
 
-  useEffect(() => {
-    setError(null);
-    if (!email.trim()) {
-      setIsValid(false);
-      return;
-    }
-    const normalized = email.trim().toLowerCase();
-    const domain = INSTITUTIONAL_DOMAINS.find((d) => normalized.endsWith('@' + d.domain));
-    setIsValid(!!domain);
-  }, [email]);
+  const normalizedEmail = email.trim().toLowerCase();
+  const matchedDomain = INSTITUTIONAL_DOMAINS.find((d) => normalizedEmail.endsWith('@' + d.domain));
+  const isValid = Boolean(normalizedEmail && matchedDomain);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (submitting || sendingCode) return;
+    if (submitting) return;
     setError(null);
 
     if (!email.trim()) {
@@ -46,7 +39,7 @@ export function OnboardingEmail({ onSubmit }: { onSubmit: (email: string) => voi
 
     if (!domain) {
       setError(
-        'Solo se permiten correos institucionales de Cali (@icesi.edu.co, @u.icesi.edu.co, @javerianacali.edu.co, @uao.edu.co). No se aceptan Gmail ni otros correos personales.',
+        'Ingresa un correo institucional válido de Cali (@icesi.edu.co, @javerianacali.edu.co, @uao.edu.co, @correounivalle.edu.co).',
       );
       return;
     }
@@ -54,7 +47,6 @@ export function OnboardingEmail({ onSubmit }: { onSubmit: (email: string) => voi
     setSubmitting(true);
 
     try {
-      // Enviar código por email
       const response = await fetch('/api/auth/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,10 +56,14 @@ export function OnboardingEmail({ onSubmit }: { onSubmit: (email: string) => voi
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error enviando código');
+        throw new Error(data.error || 'Error al enviar código de verificación');
       }
 
-      // Éxito: avanzar al paso de verificación
+      // Si el servidor nos entrega devCode en modo demo, guardarlo temporalmente para facilitar la prueba
+      if (data.devCode) {
+        sessionStorage.setItem('rc_last_demo_code', data.devCode);
+      }
+
       setSubmitting(false);
       onSubmit(normalized);
     } catch (err) {
@@ -92,32 +88,33 @@ export function OnboardingEmail({ onSubmit }: { onSubmit: (email: string) => voi
             <Input
               label="Correo institucional"
               type="email"
-              placeholder="tu nombre @icesi.edu.co"
+              placeholder="nombre.apellido@icesi.edu.co"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={error ?? undefined}
               icon={<Mail className="h-4 w-4 text-text-secondary" />}
-              disabled={submitting || sendingCode}
+              disabled={submitting}
               autoComplete="email"
               required
             />
 
-            <div className="space-y-1 text-xs text-text-secondary">
+            <div className="space-y-1 text-left text-xs text-text-secondary bg-secondary/50 dark:bg-muted/20 p-3 rounded-xl border border-border dark:border-border-dark">
+              <p className="font-semibold text-text mb-1 text-[11px] uppercase tracking-wider">Universidades admitidas:</p>
               {INSTITUTIONAL_DOMAINS.map((d) => (
                 <div key={d.domain} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  <span>@{d.domain} · {d.name}</span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                  <span className="truncate">@{d.domain} · {d.name}</span>
                 </div>
               ))}
             </div>
 
             {error && (
-              <p className="text-xs text-error animate-slide-up">{error}</p>
+              <p className="text-xs text-error animate-slide-up" role="alert">{error}</p>
             )}
 
             {!error && isValid && !submitting && (
               <p className="text-xs text-primary font-medium animate-slide-up">
-                Correo válido · listo para enviar código
+                ✓ Dominio institucional admitido · listo para enviar código
               </p>
             )}
 
@@ -126,20 +123,18 @@ export function OnboardingEmail({ onSubmit }: { onSubmit: (email: string) => voi
               variant="primary"
               fullWidth
               loading={submitting}
-              disabled={submitting || sendingCode || !isValid}
+              disabled={submitting || !isValid}
             >
               {submitting
                 ? 'Enviando código…'
                 : isValid
                   ? 'Enviar código de verificación'
-                  : 'Correo inválido'}
+                  : 'Ingresa correo institucional'}
             </Button>
           </form>
 
           <p className="text-xs text-text-secondary mt-4">
-            Solo correos institucionales. No se aceptan @gmail.com ni correos personales.
-            <br />
-            Te enviaremos un código de 5 dígitos a tu bandeja de entrada.
+            Recibirás un código seguro de 5 dígitos para validar tu cupo y PIN de abordaje.
           </p>
         </div>
       </Card>

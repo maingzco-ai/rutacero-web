@@ -6,20 +6,9 @@ import { Card } from '../ui/Card';
 import { useAppState } from '@/app/lib/AppState';
 import { cn } from '@/app/lib/design-system';
 
-/** Escapa HTML para prevenir XSS al renderizar contenido de notificaciones. */
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 export default function NotificationsExperience() {
   const { notifications, markNotificationsRead } = useAppState();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const timer = setTimeout(() => markNotificationsRead(), 800);
     return () => clearTimeout(timer);
@@ -38,9 +27,9 @@ export default function NotificationsExperience() {
           notifications.map((item) => {
             const content = (
               <Card padding="md" className={cn(!item.read && 'border-primary/20')} key={item.id}>
-                <p className="font-semibold text-text">{escapeHtml(item.title)}</p>
+                <p className="font-semibold text-text">{item.title}</p>
                 <p className="mt-1 text-sm text-text-secondary dark:text-text-secondary">
-                  {escapeHtml(item.body)}
+                  {item.body}
                 </p>
                 <p className="mt-2 text-xs text-text-secondary">{item.at}</p>
               </Card>

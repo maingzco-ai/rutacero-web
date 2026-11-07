@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { ShieldCheck, AlertCircle } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { cn } from '@/app/lib/design-system';
 
@@ -14,42 +13,68 @@ type Props = {
   verifying: boolean;
   canResend: boolean;
   secondsLeft: number;
+  errorMessage?: string | null;
   onError?: (message: string) => void;
 };
 
-export function OnboardingVerify({ email, method, onVerify, resendCode, verifying, canResend, secondsLeft, onError }: Props) {
+export function OnboardingVerify({
+  email,
+  method,
+  onVerify,
+  resendCode,
+  verifying,
+  canResend,
+  secondsLeft,
+  errorMessage,
+}: Props) {
   const [code, setCode] = useState('');
   const [focusedDigit, setFocusedDigit] = useState(0);
+  // Lazy initialization - read from sessionStorage during initial render
+  const [demoHint] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const savedCode = sessionStorage.getItem('rc_last_demo_code');
+    return savedCode && savedCode.length === 5 ? savedCode : null;
+  });
   const inputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null]);
   const hasVerified = useRef(false);
+  const focusedRef = useRef(false);
 
-  // Focus management
   const focusInput = (index: number) => {
     inputRefs.current[index]?.focus();
   };
 
+  // Focus first input on mount - usando ref para evitar setState en effect
   useEffect(() => {
-    focusInput(0);
+    if (!focusedRef.current) {
+      focusedRef.current = true;
+      focusInput(0);
+    }
   }, []);
 
-  // Only trigger verification once when code reaches 5 digits
+  // Reset verification flag when code is edited or when verification finishes with error
   useEffect(() => {
-    if (code.length === 5 && !hasVerified.current) {
+    if (errorMessage) {
+      hasVerified.current = false;
+    }
+  }, [errorMessage]);
+
+  // Trigger verification once code reaches 5 digits
+  useEffect(() => {
+    if (code.length === 5 && !hasVerified.current && !verifying) {
       hasVerified.current = true;
       onVerify(code);
     } else if (code.length < 5) {
       hasVerified.current = false;
     }
-  }, [code, onVerify]);
+  }, [code, onVerify, verifying]);
 
   const handleDigitChange = (index: number, value: string) => {
-    const digit = value.replace(/\D/g, '').slice(0, 1);
-    const nextCode = code.split('');
-    nextCode[index] = digit;
-    const joined = nextCode.join('');
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const codeArr = code.split('');
+    codeArr[index] = digit;
+    const joined = codeArr.join('');
     setCode(joined);
 
-    // Auto-advance focus
     if (digit && index < 4) {
       setFocusedDigit(index + 1);
       focusInput(index + 1);
@@ -59,13 +84,12 @@ export function OnboardingVerify({ email, method, onVerify, resendCode, verifyin
   const handlePaste = (event: React.ClipboardEvent) => {
     event.preventDefault();
     const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 5);
-    const padded = pasted.padEnd(5, '');
-    setCode(padded);
-    setFocusedDigit(Math.min(pasted.length, 4));
-    focusInput(Math.min(pasted.length, 4));
+    setCode(pasted);
+    const nextFocus = Math.min(pasted.length, 4);
+    setFocusedDigit(nextFocus);
+    focusInput(nextFocus);
 
-    // Trigger verification if complete
-    if (pasted.length === 5) {
+    if (pasted.length === 5 && !verifying) {
       hasVerified.current = true;
       onVerify(pasted);
     }
@@ -76,18 +100,16 @@ export function OnboardingVerify({ email, method, onVerify, resendCode, verifyin
       if (!code[index] && index > 0) {
         setFocusedDigit(index - 1);
         focusInput(index - 1);
-      } else if (code[index]) {
-        // Clear current and move back
-        const nextCode = code.split('');
-        nextCode[index] = '';
-        setCode(nextCode.join(''));
+      } else {
+        const codeArr = code.split('');
+        codeArr[index] = '';
+        setCode(codeArr.join(''));
+        hasVerified.current = false;
       }
-    }
-    if (event.key === 'ArrowRight' && index < 4) {
+    } else if (event.key === 'ArrowRight' && index < 4) {
       setFocusedDigit(index + 1);
       focusInput(index + 1);
-    }
-    if (event.key === 'ArrowLeft' && index > 0) {
+    } else if (event.key === 'ArrowLeft' && index > 0) {
       setFocusedDigit(index - 1);
       focusInput(index - 1);
     }
@@ -101,7 +123,9 @@ export function OnboardingVerify({ email, method, onVerify, resendCode, verifyin
     resendCode();
   };
 
-  const maskedEmail = email.replace(/^(.{2})(.+)(@.+)$/, '$1***$3');
+  const maskedEmail = email.includes('@')
+    ? email.replace(/^(.{2})(.+)(@.+)$/, '$1***$3')
+    : email;
   const isTelegram = method === 'telegram';
 
   return (
@@ -112,19 +136,50 @@ export function OnboardingVerify({ email, method, onVerify, resendCode, verifyin
             <ShieldCheck className="h-6 w-6" />
           </div>
           <h2 className="text-2xl font-bold text-text mb-2">
-            {isTelegram ? 'Verifica tu Telegram' : 'Verifica tu correo'}
+            {isTelegram ? 'Verifica tu Telegram' : 'Verifica tu código'}
           </h2>
-          <p className="text-sm text-text-secondary mb-8">
-            {isTelegram
-              ? 'Te enviamos un código de 5 dígitos al chat de <br /><span className="block text-base font-medium text-text mt-1">@Rrutabot</span>'
-              : `Te enviamos un código de 5 dígitos a <br /><span className="block text-base font-medium text-text mt-1">${maskedEmail}</span>`}
+          <p className="text-sm text-text-secondary mb-6">
+            {isTelegram ? (
+              <>
+                Te enviamos un código de 5 dígitos al chat de{' '}
+                <span className="block text-base font-semibold text-text mt-1">@Rrutabot</span>
+              </>
+            ) : (
+              <>
+                Te enviamos un código de 5 dígitos a{' '}
+                <span className="block text-base font-semibold text-text mt-1">{maskedEmail}</span>
+              </>
+            )}
           </p>
 
-          <div className="flex justify-center gap-2 mb-8" role="group" aria-label="Código de verificación de 5 dígitos">
+          {/* Banner con código de prueba en modo DEMO */}
+          {demoHint && (
+            <div className="mb-6 p-2.5 rounded-xl bg-accent/15 border border-accent/40 text-xs text-text flex items-center justify-center gap-2">
+              <span className="font-bold text-primary">DEMO OTP:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setCode(demoHint);
+                  onVerify(demoHint);
+                }}
+                className="font-mono font-bold tracking-widest text-primary underline hover:text-primary-dark"
+              >
+                {demoHint} (clic para autocompletar)
+              </button>
+            </div>
+          )}
+
+          <div
+            className="flex justify-center gap-2 mb-4"
+            role="group"
+            aria-label="Código de verificación de 5 dígitos"
+          >
             {Array.from({ length: 5 }).map((_, i) => (
               <input
                 key={i}
-                ref={(el) => { inputRefs.current[i] = el; }}
+                ref={(el) => {
+                  inputRefs.current[i] = el;
+                }}
                 type="text"
                 maxLength={1}
                 value={code[i] || ''}
@@ -139,20 +194,28 @@ export function OnboardingVerify({ email, method, onVerify, resendCode, verifyin
                 className={cn(
                   'h-12 w-12 rounded-xl border text-center text-xl font-mono text-text transition-all',
                   code[i]
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-border bg-card text-text-secondary dark:border-border-dark dark:bg-card-dark dark:text-text-secondary',
+                    ? 'border-primary bg-primary/5 text-primary font-bold'
+                    : 'border-border bg-card text-text-secondary dark:border-border-dark dark:bg-card-dark',
                   focusedDigit === i && !code[i]
                     ? 'ring-2 ring-primary/50 border-primary shadow-[0_0_0_3px_rgba(11,124,192,0.15)]'
                     : '',
-                  verifying && 'opacity-50 cursor-wait'
+                  errorMessage ? 'border-error ring-1 ring-error/50' : '',
+                  verifying ? 'opacity-50 cursor-wait' : ''
                 )}
               />
             ))}
           </div>
 
+          {errorMessage && (
+            <div className="flex items-center justify-center gap-1.5 text-xs text-error font-medium mb-4 animate-slide-up">
+              <AlertCircle className="h-4 w-4" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           {verifying && (
-            <p className="text-xs text-primary mb-4" role="status" aria-live="polite">
-              Verificando código...
+            <p className="text-xs text-primary font-medium mb-4" role="status" aria-live="polite">
+              Verificando código de seguridad…
             </p>
           )}
 
@@ -164,16 +227,18 @@ export function OnboardingVerify({ email, method, onVerify, resendCode, verifyin
               disabled={!canResend || verifying}
               className={cn(
                 'ml-1 font-medium transition-colors',
-                !canResend || verifying ? 'text-text-secondary' : 'text-primary underline decoration-primary/40 underline-offset-2 hover:text-primary-dark',
+                !canResend || verifying
+                  ? 'text-text-secondary opacity-60 cursor-not-allowed'
+                  : 'text-primary underline decoration-primary/40 underline-offset-2 hover:text-primary-dark cursor-pointer',
               )}
             >
               {canResend ? 'Reenviar código' : `Reenviar en ${secondsLeft}s`}
             </button>
           </p>
 
-          <div className="flex justify-center">
-            <span className="text-xs text-text-secondary">{secondsLeft > 0 ? 'Código expira en' : 'Solicita un nuevo código'}</span>
-            {secondsLeft > 0 && <span className="ml-1 text-xs font-semibold text-text">{secondsLeft}s</span>}
+          <div className="flex justify-center text-xs text-text-secondary">
+            <span>{secondsLeft > 0 ? 'Vigencia del código:' : 'Código expirado:'}</span>
+            <span className="ml-1 font-semibold text-text">{secondsLeft > 0 ? `${secondsLeft}s` : 'Solicita uno nuevo'}</span>
           </div>
         </div>
       </Card>

@@ -1,96 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  getPendingLinks,
   setPendingLink,
-  deletePendingLink,
   getLinkedUsers,
-  setLinkedUser,
   deleteLinkedUser,
   generateCode,
   getApiUrl,
+  hasBotConfigured,
 } from '@/app/lib/telegram-store';
 
 export async function POST(req: NextRequest) {
   try {
+    // Validación opcional de token secreto configurado en el webhook de Telegram
+    const secretHeader = req.headers.get('x-telegram-bot-api-secret-token');
+    const configuredSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (configuredSecret && secretHeader && secretHeader !== configuredSecret) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
     const update = await req.json();
 
-    // Procesar mensaje
+    // Procesar mensaje entrante
     if (update.message) {
       const { message } = update;
-      const chatId = message.chat.id;
-      const text = message.text || '';
-      const userId = message.from?.id;
-      const username = message.from?.username;
+      const chatId = message.chat?.id;
+      const text = (message.text || '').trim();
 
-      const pendingLinks = await getPendingLinks();
+      if (!chatId) {
+        return NextResponse.json({ ok: true });
+      }
+
       const linkedUsers = await getLinkedUsers();
 
-      // Comando /start UID → vincular cuenta
-      if (text.startsWith('/start ')) {
-        const uid = text.split(' ')[1];
+      // 1. Comando /start UID → vincular cuenta desde la aplicación
+      if (text.startsWith('/start')) {
+        const parts = text.split(' ');
+        const uid = parts[1]?.trim();
 
-        if (uid && uid.length > 10) { // UUID válido
+        if (uid && uid.length >= 8) {
           const code = generateCode();
 
           await setPendingLink(uid, {
             code,
             chatId,
-            expiresAt: Date.now() + 5 * 60 * 1000, // 5 min
+            expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutos de vigencia
           });
 
-          await sendTelegramMessage(chatId,
-            `🔐 <b>RutaCero - Código de verificación</b>\n\n` +
-            `Tu código: <code>${code}</code>\n\n` +
-            `Expira en <b>5 minutos</b>. Ingrésalo en la app para vincular tu cuenta.\n\n` +
-            `— RutaCero Bot`
+          await sendTelegramMessage(
+            chatId,
+            `🔐 <b>RutaCero [DEMO] - Código de verificación</b>\n\n` +
+            `Tu código es: <code>${code}</code>\n\n` +
+            `⏱ Expira en <b>5 minutos</b>.\n` +
+            `Ingrésalo en la aplicación para activar tus notificaciones.\n\n` +
+            `— Equipo RutaCero Cali`
           );
         } else {
-          await sendTelegramMessage(chatId,
-            `👋 <b>Bienvenido a RutaCero Bot</b>\n\n` +
-            `Para vincular tu cuenta, abre la app RutaCero y usa la opción <b>"Continuar con Telegram"</b>.\n\n` +
-            `Esto generará un enlace único para conectar tu cuenta de forma segura.\n\n` +
-            `— RutaCero Bot`
+          await sendTelegramMessage(
+            chatId,
+            `👋 <b>¡Bienvenido al Bot Oficial de RutaCero!</b>\n\n` +
+            `Para vincular tu cuenta:\n` +
+            `1. Abre la app RutaCero en tu navegador.\n` +
+            `2. Selecciona <b>"Continuar con Telegram"</b>.\n` +
+            `3. Pulsa el enlace que te redirigirá a este chat con tu código personal.\n\n` +
+            `Comandos disponibles:\n` +
+            `• <b>/codigo</b> - Solicitar nuevo código OTP\n` +
+            `• <b>/desvincular</b> - Desconectar tu cuenta\n` +
+            `• <b>/ayuda</b> - Ver instrucciones\n\n` +
+            `— RutaCero: Movilidad universitaria segura en Cali`
           );
         }
       }
 
-      // Comando /codigo para reenviar (si ya está vinculado)
-      if (text === '/codigo' || text === '/code') {
-        // Buscar uid por chatId
+      // 2. Comando /codigo para reenviar código de verificación
+      else if (text === '/codigo' || text === '/code') {
         let foundUid: string | null = null;
-        for (const [uid, chatIdStored] of linkedUsers.entries()) {
-          if (chatIdStored === chatId) {
+        for (const [uid, storedChatId] of linkedUsers.entries()) {
+          if (storedChatId === chatId) {
             foundUid = uid;
             break;
           }
         }
 
-        if (foundUid) {
-          const code = generateCode();
-          await setPendingLink(foundUid, {
-            code,
-            chatId,
-            expiresAt: Date.now() + 5 * 60 * 1000,
-          });
+        const activeUid = foundUid || `session-${chatId}`;
+        const code = generateCode();
 
-          await sendTelegramMessage(chatId,
-            `🔐 <b>Nuevo código de verificación</b>\n\n` +
-            `Tu código: <code>${code}</code>\n\n` +
-            `Expira en <b>5 minutos</b>.`
-          );
-        } else {
-          await sendTelegramMessage(chatId,
-            `❌ No tienes cuenta vinculada.\n\n` +
-            `Usa <b>"Continuar con Telegram"</b> en la app para vincular tu cuenta.`
-          );
-        }
+        await setPendingLink(activeUid, {
+          code,
+          chatId,
+          expiresAt: Date.now() + 5 * 60 * 1000,
+        });
+
+        await sendTelegramMessage(
+          chatId,
+          `🔐 <b>Nuevo código de verificación</b>\n\n` +
+          `Tu código OTP: <code>${code}</code>\n\n` +
+          `Expira en <b>5 minutos</b>.`
+        );
       }
 
-      // Comando /desvincular
-      if (text === '/desvincular' || text === '/unlink') {
+      // 3. Comando /desvincular
+      else if (text === '/desvincular' || text === '/unlink') {
         let foundUid: string | null = null;
-        for (const [uid, chatIdStored] of linkedUsers.entries()) {
-          if (chatIdStored === chatId) {
+        for (const [uid, storedChatId] of linkedUsers.entries()) {
+          if (storedChatId === chatId) {
             foundUid = uid;
             break;
           }
@@ -98,74 +109,79 @@ export async function POST(req: NextRequest) {
 
         if (foundUid) {
           await deleteLinkedUser(foundUid);
-          await sendTelegramMessage(chatId, `✅ Cuenta desvinculada correctamente.`);
+          await sendTelegramMessage(chatId, `✅ Tu cuenta ha sido desvinculada correctamente de RutaCero.`);
         } else {
-          await sendTelegramMessage(chatId, `ℹ️ No tenías cuenta vinculada.`);
+          await sendTelegramMessage(chatId, `ℹ️ No encontramos una cuenta vinculada a este usuario de Telegram.`);
         }
       }
 
-      // Comando /ayuda
-      if (text === '/ayuda' || text === '/help') {
-        await sendTelegramMessage(chatId,
-          `🤖 <b>RutaCero Bot - Comandos</b>\n\n` +
-          `<b>/start [código]</b> - Vincular cuenta (desde la app)\n` +
-          `<b>/codigo</b> - Generar nuevo código OTP\n` +
-          `<b>/desvincular</b> - Desvincular cuenta\n` +
-          `<b>/ayuda</b> - Mostrar esta ayuda\n\n` +
-          `📱 <b>Notificaciones automáticas:</b>\n` +
-          `• Reserva confirmada + PIN\n` +
-          `• Conductor asignado + placa\n` +
-          `• Recordatorio 10 min antes\n` +
-          `• Viaje completado + rating\n\n` +
-          `¿Preguntas? soporte@rutacero.co`
+      // 4. Comando /ayuda
+      else if (text === '/ayuda' || text === '/help') {
+        await sendTelegramMessage(
+          chatId,
+          `🤖 <b>RutaCero Bot - Asistente de Viajes</b>\n\n` +
+          `<b>Comandos:</b>\n` +
+          `• <b>/codigo</b> - Generar nuevo código OTP\n` +
+          `• <b>/desvincular</b> - Desconectar tu cuenta\n` +
+          `• <b>/ayuda</b> - Mostrar esta información\n\n` +
+          `📱 <b>Notificaciones integradas:</b>\n` +
+          `• Reserva confirmada + PIN de abordaje\n` +
+          `• Asignación de conductor y placa del vehículo\n` +
+          `• Recordatorio 10 minutos antes de la recogida\n` +
+          `• Viaje completado y calificación justa\n\n` +
+          `¿Preguntas o soporte? Escríbenos a <b>soporte@rutacero.co</b>`
         );
       }
     }
 
-    // Callback queries (botones inline)
+    // Procesar callback queries (botones interactivos en mensajes de Telegram)
     if (update.callback_query) {
       const { callback_query } = update;
-      const chatId = callback_query.message?.chat?.id;
-      const data = callback_query.data;
+      const callbackId = callback_query.id;
 
-      if (chatId && data?.startsWith('notify_')) {
-        // Responder al callback
-        await fetch(`${getApiUrl()}/answerCallbackQuery`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ callback_query_id: callback_query.id }),
-        });
+      if (hasBotConfigured() && callbackId) {
+        try {
+          const apiUrl = getApiUrl();
+          await fetch(`${apiUrl}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ callback_query_id: callbackId }),
+            signal: AbortSignal.timeout(5000),
+          });
+        } catch {
+          /* ignore callback query response error */
+        }
       }
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error('Telegram webhook error:', error);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    console.error('[Telegram Webhook Error]:', error);
+    // Siempre retornar 200 para evitar reintentos infinitos de Telegram
+    return NextResponse.json({ ok: false, error: 'Procesado con observaciones' }, { status: 200 });
   }
 }
 
-// GET para verificación de webhook (Telegram lo llama al setear)
+// GET para verificación de estado del webhook
 export async function GET() {
-  try {
-    // Verificar que el token esté configurado
-    getApiUrl();
-    return NextResponse.json({
-      status: 'ok',
-      bot: 'RutaCero Bot',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    return NextResponse.json({
-      status: 'error',
-      error: error instanceof Error ? error.message : 'Configuración incompleta'
-    }, { status: 500 });
-  }
+  const configured = hasBotConfigured();
+  return NextResponse.json({
+    status: configured ? 'ok' : 'demo_mode',
+    service: 'RutaCero Telegram Webhook',
+    botConfigured: configured,
+    timestamp: new Date().toISOString(),
+  });
 }
 
 async function sendTelegramMessage(chatId: number, text: string): Promise<boolean> {
+  if (!hasBotConfigured()) {
+    console.log(`[RutaCero Telegram Simulado -> Chat ${chatId}]:\n${text}`);
+    return true;
+  }
+
   try {
-    const res = await fetch(`${getApiUrl()}/sendMessage`, {
+    const apiUrl = getApiUrl();
+    const res = await fetch(`${apiUrl}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -174,21 +190,11 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<boolea
         parse_mode: 'HTML',
         disable_web_page_preview: true,
       }),
+      signal: AbortSignal.timeout(8000),
     });
     return res.ok;
-  } catch {
+  } catch (err) {
+    console.warn('[Telegram Webhook] Error al enviar mensaje:', err);
     return false;
   }
 }
-
-// Exportar funciones para que telegram-link las use
-export {
-  getPendingLinks,
-  setPendingLink,
-  deletePendingLink,
-  getLinkedUsers,
-  setLinkedUser,
-  deleteLinkedUser,
-  generateCode,
-  getApiUrl,
-} from '@/app/lib/telegram-store';

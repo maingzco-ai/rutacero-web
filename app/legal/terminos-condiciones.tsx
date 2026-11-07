@@ -21,7 +21,7 @@ export function TerminosCondiciones() {
       <article className="prose prose-slate dark:prose-invert max-w-none space-y-6">
         <section>
           <h2>1. Identificación del Responsable</h2>
-          <p>RutaCero (en adelante, "la Plataforma") es un servicio de intermediación tecnológica para carpooling (viajes compartidos) operado por:</p>
+          <p>RutaCero (en adelante, &quot;la Plataforma&quot;) es un servicio de intermediación tecnológica para carpooling (viajes compartidos) operado por:</p>
           <ul className="list-disc list-inside space-y-1 mt-2">
             <li><strong>Denominación social:</strong> RutaCero S.A.S.</li>
             <li><strong>NIT:</strong> 900.XXX.XXX-X</li>
@@ -77,7 +77,7 @@ export function TerminosCondiciones() {
 
           <h3 className="font-semibold mt-4">5.2 Reserva de cupos (Pasajero)</h3>
           <ul className="list-disc list-inside space-y-1 mt-2">
-            <li>El Pasajero selecciona ruta, punto de recogida y preferencia (ej. "ventana", "silencio").</li>
+            <li>El Pasajero selecciona ruta, punto de recogida y preferencia (ej. &quot;ventana&quot;, &quot;silencio&quot;).</li>
             <li>Al confirmar, se genera PIN y se descuenta el valor del saldo/billetera.</li>
             <li>El PIN debe mostrarse al Conductor al abordar; sin PIN no hay obligación de transportar.</li>
             <li>Una reserva activa por viaje por usuario; no se permite doble reserva.</li>
@@ -169,7 +169,7 @@ export function TerminosCondiciones() {
           <h2>12. Datos Personales y Comunicaciones (Ley 1581/2012, Ley 527/1999)</h2>
           <ul className="list-disc list-inside space-y-2 mt-2">
             <li>Al registrarse, el Usuario <strong>autoriza expresamente</strong> el tratamiento de sus datos para: prestar el servicio, seguridad, prevención de fraude, mejorar la experiencia, enviar comunicaciones transaccionales (reservas, pagos, PIN, alertas de seguridad).</li>
-            <li><strong>Comunicaciones comerciales/promocionales:</strong> Requieren consentimiento previo, libre, informado y específico (opt-in). El Usuario puede revocarlo en cualquier momento desde <code>Configuración / Notificaciones</code> o respondiendo "STOP" a cualquier WhatsApp/SMS.</li>
+            <li><strong>Comunicaciones comerciales/promocionales:</strong> Requieren consentimiento previo, libre, informado y específico (opt-in). El Usuario puede revocarlo en cualquier momento desde <code>Configuración / Notificaciones</code> o respondiendo &quot;STOP&quot; a cualquier WhatsApp/SMS.</li>
             <li>Derechos ARCO (Acceso, Rectificación, Cancelación, Oposición): escribir a privacy@rutacero.co. Respuesta en 15 días hábiles (Ley 1581 Art. 14).</li>
             <li>Oficial de Privacidad: privacy@rutacero.co | Tel: +57 2 888 XXXX.</li>
             <li>Datos se conservan mientras la cuenta esté activa y 2 años tras cierre (Ley 1480 Art. 25).</li>

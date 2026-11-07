@@ -9,7 +9,6 @@ import { OnboardingVerify } from './OnboardingVerify';
 import { OnboardingWelcome } from './OnboardingWelcome';
 import { TelegramLogin } from './TelegramLogin';
 import { OnboardingEmail } from './OnboardingEmail';
-import { brand } from '@/app/lib/brand';
 
 type Step = 'splash' | 'role' | 'contact' | 'telegram' | 'email' | 'verify' | 'welcome' | 'done';
 
@@ -25,9 +24,39 @@ type OnboardingData = {
   completedAt: string | null;
 };
 
-export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
-  const [step, setStep] = useState<Step>('splash');
-  const [data, setData] = useState<OnboardingData>({
+// Lazy initialization: read from localStorage once during initial render
+function getInitialData(): OnboardingData {
+  if (typeof window === 'undefined') {
+    return {
+      role: null,
+      contactMethod: null,
+      telegramUid: null,
+      telegramChatId: null,
+      email: null,
+      isFirstTrip: true,
+      completedAt: null,
+    };
+  }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<OnboardingData>;
+      if (parsed.role && (parsed.telegramChatId || parsed.email || parsed.completedAt)) {
+        return {
+          role: parsed.role as 'conductor' | 'viajero' | 'ambos',
+          contactMethod: parsed.contactMethod ?? 'email',
+          telegramUid: parsed.telegramUid ?? null,
+          telegramChatId: parsed.telegramChatId ?? null,
+          email: parsed.email ?? null,
+          isFirstTrip: parsed.isFirstTrip ?? true,
+          completedAt: parsed.completedAt ?? null,
+        };
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return {
     role: null,
     contactMethod: null,
     telegramUid: null,
@@ -35,57 +64,65 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
     email: null,
     isFirstTrip: true,
     completedAt: null,
-  });
+  };
+}
+
+function getInitialStep(initialData: OnboardingData): Step {
+  if (initialData.role && (initialData.telegramChatId || initialData.email || initialData.completedAt)) {
+    return 'done';
+  }
+  return 'splash';
+}
+
+export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
+  const [step, setStep] = useState<Step>(() => getInitialStep(getInitialData()));
+  const [data, setData] = useState<OnboardingData>(() => getInitialData());
   const [verifying, setVerifying] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const onFinishCalled = useRef(false);
+  const finishedRef = useRef(false);
 
-  // Cargar estado previo de onboarding
+  // Auto-finish if initial data indicates completed onboarding
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<OnboardingData>;
-        if (parsed.role && (parsed.telegramChatId || parsed.email)) {
-          setData((prev) => ({
-            ...prev,
-            role: parsed.role as 'conductor' | 'viajero' | 'ambos',
-            contactMethod: parsed.contactMethod ?? 'telegram',
-            telegramUid: parsed.telegramUid ?? null,
-            telegramChatId: parsed.telegramChatId ?? null,
-            email: parsed.email ?? null,
-            isFirstTrip: parsed.isFirstTrip ?? true,
-            completedAt: parsed.completedAt ?? null,
-          }));
-          setStep('done');
-          if (!onFinishCalled.current) {
-            onFinishCalled.current = true;
-            onFinish();
-          }
-          return;
-        }
+    if (step === 'done' && !finishedRef.current) {
+      finishedRef.current = true;
+      if (!onFinishCalled.current) {
+        onFinishCalled.current = true;
+        onFinish();
       }
-    } catch {
-      /* ignore */
     }
-  }, [onFinish]);
+  }, [step, onFinish]);
 
-  // Temporizador de reenvío de código
+  // Temporizador de reenvío de código - using refs to track state without setState in effect
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const secondsLeftRef = useRef(secondsLeft);
+  const canResendRef = useRef(canResend);
+
   useEffect(() => {
-    if (canResend) return;
-    let timer: NodeJS.Timeout;
-    if (secondsLeft > 0) {
+    secondsLeftRef.current = secondsLeft;
+    canResendRef.current = canResend;
+
+    if (canResendRef.current) return;
+    let timer: NodeJS.Timeout | null = null;
+    if (secondsLeftRef.current > 0) {
       timer = setInterval(() => {
         setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
       }, 1000);
     } else {
       setCanResend(true);
     }
-    return () => clearInterval(timer);
-  }, [secondsLeft, canResend]);
+    timerRef.current = timer;
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, []); // Intentionally empty: refs provide current values
 
-  const goNext = useCallback((next: Step) => setStep(next), []);
+  const goNext = useCallback((next: Step) => {
+    setErrorMessage(null);
+    setStep(next);
+  }, []);
 
   const handleRoleSelect = (role: 'conductor' | 'viajero' | 'ambos') => {
     setData((prev) => ({ ...prev, role }));
@@ -105,14 +142,12 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   };
 
   const handleTelegramCodeSent = () => {
-    // El usuario ya abrió Telegram y el bot envió el código
-    // Avanzar al step verify para que ingrese el código en la app
     setSecondsLeft(60);
     setCanResend(false);
     goNext('verify');
   };
 
-  const handleEmailSubmit = async (email: string) => {
+  const handleEmailSubmit = (email: string) => {
     setData((prev) => ({ ...prev, email }));
     setSecondsLeft(60);
     setCanResend(false);
@@ -121,6 +156,8 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
 
   const handleVerifyCode = async (code: string) => {
     setVerifying(true);
+    setErrorMessage(null);
+
     try {
       if (data.contactMethod === 'telegram' && data.telegramUid) {
         const response = await fetch('/api/auth/telegram-link', {
@@ -134,6 +171,8 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
 
         if (result.valid) {
           goNext('welcome');
+        } else {
+          setErrorMessage(result.error || 'Código incorrecto. Verifica e intenta de nuevo.');
         }
       } else if (data.contactMethod === 'email' && data.email) {
         const response = await fetch('/api/auth/send-code', {
@@ -147,51 +186,63 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
 
         if (result.valid) {
           goNext('welcome');
+        } else {
+          setErrorMessage(result.error || 'Código incorrecto o expirado.');
         }
       } else {
+        // Fallback demostración
         setVerifying(false);
+        goNext('welcome');
       }
     } catch {
       setVerifying(false);
+      setErrorMessage('Error de red al verificar el código. Intenta nuevamente.');
     }
   };
 
   const handleResendCode = async () => {
+    setErrorMessage(null);
     if (data.contactMethod === 'telegram' && data.telegramUid) {
       try {
-        await fetch('/api/auth/telegram-link', {
+        const res = await fetch('/api/auth/telegram-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid: data.telegramUid, action: 'resend' }),
         });
+        const resData = await res.json();
+        if (resData.devCode) {
+          sessionStorage.setItem('rc_last_demo_code', resData.devCode);
+        }
         setSecondsLeft(60);
         setCanResend(false);
       } catch {
-        // Silenciar error
+        /* silenciar */
       }
     } else if (data.contactMethod === 'email' && data.email) {
       try {
-        await fetch('/api/auth/send-code', {
+        const res = await fetch('/api/auth/send-code', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: data.email, action: 'resend' }),
         });
+        const resData = await res.json();
+        if (resData.devCode) {
+          sessionStorage.setItem('rc_last_demo_code', resData.devCode);
+        }
         setSecondsLeft(60);
         setCanResend(false);
       } catch {
-        // Silenciar error
+        /* silenciar */
       }
     }
   };
 
   const handleWelcomeFinish = () => {
     const now = new Date().toISOString();
-    setData((prev) => ({ ...prev, completedAt: now }));
+    const updated = { ...data, completedAt: now };
+    setData(updated);
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ ...data, completedAt: now }),
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     } catch {
       /* ignore */
     }
@@ -201,11 +252,11 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
 
   if (step === 'done') return null;
 
-  const verifyLabel = data.contactMethod === 'telegram' ? 'Telegram (@Rrutabot)' : data.email || 'Correo electrónico';
+  const verifyLabel = data.contactMethod === 'telegram' ? 'Telegram (@Rrutabot)' : data.email || 'Correo institucional';
   const verifyMethod = data.contactMethod ?? undefined;
 
   return (
-    <div className="fixed inset-0 z-50 bg-canvas dark:bg-background-dark overflow-hidden">
+    <div className="fixed inset-x-0 top-[33px] bottom-0 z-50 bg-canvas dark:bg-background-dark overflow-y-auto">
       <AnimatePresence mode="wait">
         {step === 'splash' && (
           <motion.div
@@ -272,7 +323,7 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
               verifying={verifying}
               canResend={canResend}
               secondsLeft={secondsLeft}
-              onError={() => {}}
+              errorMessage={errorMessage}
             />
           </motion.div>
         )}

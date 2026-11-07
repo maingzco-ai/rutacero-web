@@ -51,7 +51,7 @@ export default function HomeExperience() {
   };
 
   const appContent = (
-    <div className="relative h-dvh overflow-hidden">
+    <div className="relative h-[calc(100dvh-33px)] overflow-hidden">
       <div className="absolute inset-0">
         <InteractiveMap routeData={routeData} className="h-full rounded-none" />
       </div>
@@ -148,7 +148,7 @@ export default function HomeExperience() {
 
   if (!onboardingComplete) {
     return (
-      <div className="h-dvh">
+      <div className="h-[calc(100dvh-33px)]">
         <OnboardingFlow onFinish={() => setOnboardingComplete(true)} />
       </div>
     );
@@ -161,7 +161,7 @@ export default function HomeExperience() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0, transition: { duration: 0.25 } }}
-        className="h-dvh"
+        className="h-[calc(100dvh-33px)]"
       >
         {appContent}
       </motion.div>

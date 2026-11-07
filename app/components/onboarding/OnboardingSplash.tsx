@@ -7,7 +7,11 @@ import { brand } from '@/app/lib/brand';
 export function OnboardingSplash({ onFinish }: { onFinish: () => void }) {
   const [progress, setProgress] = useState(0);
   const onFinishRef = useRef(onFinish);
-  onFinishRef.current = onFinish;
+
+  // Actualizar ref sin causar re-render
+  useEffect(() => {
+    onFinishRef.current = onFinish;
+  }, [onFinish]);
 
   useEffect(() => {
     // Barra de carga progresiva durante ~3 segundos, llega a 100% y avanza

@@ -3,13 +3,17 @@
  * Prevents hydration mismatches by ensuring client-only code runs after mount
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export function useMounted(): boolean {
   const [mounted, setMounted] = useState(false);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    setMounted(true);
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      setMounted(true);
+    }
   }, []);
 
   return mounted;
@@ -22,9 +26,11 @@ export function useMounted(): boolean {
 export function useClientValue<T>(getValue: () => T, fallback: T): T {
   const [value, setValue] = useState(fallback);
   const mounted = useMounted();
+  const valueSetRef = useRef(false);
 
   useEffect(() => {
-    if (mounted) {
+    if (mounted && !valueSetRef.current) {
+      valueSetRef.current = true;
       setValue(getValue());
     }
   }, [mounted, getValue]);
@@ -38,12 +44,18 @@ export function useClientValue<T>(getValue: () => T, fallback: T): T {
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
   const mounted = useMounted();
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (!mounted) return;
 
     const media = window.matchMedia(query);
-    setMatches(media.matches);
+
+    // Only set initial value once
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      setMatches(media.matches);
+    }
 
     const listener = (event: MediaQueryListEvent) => setMatches(event.matches);
     media.addEventListener('change', listener);
@@ -60,12 +72,18 @@ export function useMediaQuery(query: string): boolean {
 export function useWindowSize(): { width: number; height: number } {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const mounted = useMounted();
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (!mounted) return;
 
     const update = () => setSize({ width: window.innerWidth, height: window.innerHeight });
-    update();
+
+    // Only set initial value once
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      update();
+    }
 
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);

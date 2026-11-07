@@ -53,6 +53,20 @@ function stepType(modifier: string): RouteStep['type'] {
   }
 }
 
+interface OsrmStep {
+  name?: string;
+  distance?: number;
+  duration?: number;
+  maneuver?: {
+    instruction?: string;
+    modifier?: string;
+  };
+}
+
+interface OsrmLeg {
+  steps?: OsrmStep[];
+}
+
 export async function calculateRoute(
   origin: { lat: number; lng: number },
   destination: { lat: number; lng: number },
@@ -67,9 +81,9 @@ export async function calculateRoute(
     const route = data.routes?.[0];
     if (!route) return null;
 
-    const steps: RouteStep[] = route.legs
-      .flatMap((leg: any) =>
-        leg.steps?.map((step: any) => {
+    const steps: RouteStep[] = (route.legs as OsrmLeg[])
+      .flatMap((leg: OsrmLeg) =>
+        leg.steps?.map((step: OsrmStep) => {
           const distance = step.distance ?? 0;
           const duration = step.duration ?? 0;
           return {

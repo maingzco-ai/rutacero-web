@@ -1,7 +1,5 @@
 'use client';
 
-import { cn } from '@/app/lib/design-system';
-
 const POLITICA_VERSION = '1.0';
 const POLITICA_FECHA = '2026-01-15';
 
@@ -62,7 +60,7 @@ export function PoliticaPrivacidad() {
             <li>Newsletter semanal con novedades, tips de seguridad, promociones.</li>
             <li>Campañas de referidos (créditos por invitar amigos).</li>
             <li>Ofertas de aliados (seguros, mantenimiento vehicular, estacionamientos).</li>
-            <li><strong>Puede revocar este consentimiento en cualquier momento</strong> desde <code>Configuración / Notificaciones</code> o respondiendo "STOP" a cualquier WhatsApp/SMS promocional.</li>
+            <li><strong>Puede revocar este consentimiento en cualquier momento</strong> desde <code>Configuración / Notificaciones</code> o respondiendo &quot;STOP&quot; a cualquier WhatsApp/SMS promocional.</li>
           </ul>
         </section>
 
@@ -118,7 +116,7 @@ export function PoliticaPrivacidad() {
             <li><strong>Portabilidad:</strong> Recibir sus datos en formato estructurado, de uso común y lectura mecánica (JSON/CSV).</li>
             <li><strong>No ser sometido a decisiones automatizadas</strong> con efectos jurídicos sin revisión humana.</li>
           </ul>
-          <p className="mt-3"><strong>Ejercicio de derechos:</strong> Escriba a <a href="mailto:privacy@rutacero.co" className="text-primary underline">privacy@rutacero.co</a> con asunto "Derechos ARCO - [Su Derecho]". Incluya copia de documento de identidad. Respuesta en <strong>15 días hábiles</strong> (Art. 14 Ley 1581).</p>
+          <p className="mt-3"><strong>Ejercicio de derechos:</strong> Escriba a <a href="mailto:privacy@rutacero.co" className="text-primary underline">privacy@rutacero.co</a> con asunto &quot;Derechos ARCO - [Su Derecho]&quot;. Incluya copia de documento de identidad. Respuesta en <strong>15 días hábiles</strong> (Art. 14 Ley 1581).</p>
         </section>
 
         <section>
@@ -197,7 +195,7 @@ export function PoliticaPrivacidad() {
           <address className="not-italic mt-2 space-y-1">
             <p><strong>Oficial de Privacidad:</strong> privacy@rutacero.co | +57 2 888 XXXX</p>
             <p><strong>RutaCero S.A.S.</strong> — Cali, Valle del Cauca, Colombia</p>
-            <p>Si considera que sus derechos no fueron garantizados, puede elevar reclamo ante la <strong>Superintendencia de Industria y Comercio (SIC)</strong>: <a href="https://www.sic.gov.co" target="_blank" rel="noopener" className="text-primary underline">www.sic.gov.co</a> → "Protección de Datos Personales".</p>
+            <p>Si considera que sus derechos no fueron garantizados, puede elevar reclamo ante la <strong>Superintendencia de Industria y Comercio (SIC)</strong>: <a href="https://www.sic.gov.co" target="_blank" rel="noopener" className="text-primary underline">www.sic.gov.co</a> → &quot;Protección de Datos Personales&quot;.</p>
           </address>
         </section>
       </article>

@@ -317,6 +317,24 @@ body {
 }
 
 .input-error { border-color: #EF4444; }
+.input-success { border-color: #10B981; }
+
+/* Modal & BottomSheet Primitives */
+.modal {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 32rem;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-2xl);
+}
+
+.bottom-sheet {
+  background-color: var(--color-card);
+  border-top: 1px solid var(--color-border);
+  box-shadow: var(--shadow-2xl);
+}
 
 /* Semántica de error */
 .text-error { color: #EF4444; }

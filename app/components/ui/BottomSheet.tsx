@@ -12,7 +12,7 @@ export function BottomSheet({ children, expanded = false, className, ...props }:
   return (
     <div
       className={cn(
-        'bottom-sheet',
+        'bottom-sheet fixed inset-x-0 bottom-0 z-20 flex flex-col rounded-t-3xl border-t border-border bg-card shadow-2xl transition-all duration-300 dark:border-border-dark dark:bg-card-dark',
         expanded ? 'max-h-[88vh]' : 'max-h-[58vh] sm:max-h-[62vh]',
         className,
       )}

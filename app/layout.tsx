@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://rutacero.co'),
   title: {
-    default: `${brand.name} · ${brand.tagline}`,
+    default: `${brand.name} [DEMO] · ${brand.tagline}`,
     template: `%s · ${brand.name}`,
   },
   description:
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'es_CO',
     url: 'https://rutacero.co',
-    title: `${brand.name} · ${brand.tagline}`,
+    title: `${brand.name} [DEMO] · ${brand.tagline}`,
     description: brand.shortTagline,
     siteName: brand.name,
     images: [
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${brand.name} · ${brand.tagline}`,
+    title: `${brand.name} [DEMO] · ${brand.tagline}`,
     description: brand.shortTagline,
     images: ['/og-image.png'],
   },
@@ -69,8 +69,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
-    { media: '(prefers-color-scheme: dark)', color: '#0F0F0F' },
+    { media: '(prefers-color-scheme: light)', color: '#0B7CC0' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F172A' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -80,7 +80,20 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${inter.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-canvas text-text font-sans dark:bg-background-dark dark:text-text-dark">
+      <body className="min-h-full bg-canvas text-text font-sans dark:bg-background-dark dark:text-text-dark flex flex-col">
+        {/* Elemento visual DEMO en la parte superior de la interfaz de usuario */}
+        <aside
+          role="region"
+          aria-label="Aviso de versión demostrativa"
+          className="sticky top-0 z-[100] flex w-full items-center justify-center gap-2 border-b border-primary-dark/20 bg-gradient-to-r from-primary via-primary-dark to-primary px-3 py-1.5 text-center text-xs font-bold uppercase tracking-widest text-white shadow-sm"
+        >
+          <span className="inline-flex h-2 w-2 rounded-full bg-accent animate-pulse" aria-hidden="true" />
+          <span className="font-extrabold text-white tracking-widest">DEMO</span>
+          <span className="hidden text-[11px] font-medium text-white/90 sm:inline">
+            · Plataforma de Movilidad Compartida · Cali, Colombia
+          </span>
+        </aside>
+
         <ThemeProvider>
           <AppStateProvider>{children}</AppStateProvider>
         </ThemeProvider>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, Polyline, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -27,7 +27,6 @@ interface InteractiveMapProps {
 
 function FitRoute({ points }: { points: [number, number][] }) {
   const map = useMap();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (points.length < 2) return;
     map.fitBounds(points, { padding: [48, 48], maxZoom: 14 });
@@ -46,13 +45,11 @@ const STEP_ICON: Record<CalculatedRoute['steps'][number]['type'] | string, strin
 export default function InteractiveMap({
   routeData,
   className,
-  showDirections = false,
 }: InteractiveMapProps) {
   const center: [number, number] = [3.372, -76.532];
   const zoom = 13;
 
   const [route, setRoute] = useState<CalculatedRoute | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const icons = useMemo(
     () => ({
@@ -82,28 +79,29 @@ export default function InteractiveMap({
     [],
   );
 
-  const points: [number, number][] = routeData
-    ? [
-        [routeData.origen.lat, routeData.origen.lng],
-        ...routeData.paradas.map((stop): [number, number] => [stop.lat, stop.lng]),
-        [routeData.destino.lat, routeData.destino.lng],
-      ]
-    : [];
-
-  const fetchRoute = useCallback(async () => {
-    if (!routeData || !routeData.origen || !routeData.destino) return;
-    setLoading(true);
-    try {
-      const calculated = await calculateRoute(routeData.origen, routeData.destino);
-      setRoute(calculated ?? null);
-    } finally {
-      setLoading(false);
-    }
+  const points: [number, number][] = useMemo(() => {
+    if (!routeData) return [];
+    return [
+      [routeData.origen.lat, routeData.origen.lng],
+      ...routeData.paradas.map((stop): [number, number] => [stop.lat, stop.lng]),
+      [routeData.destino.lat, routeData.destino.lng],
+    ];
   }, [routeData]);
 
   useEffect(() => {
-    fetchRoute();
-  }, [fetchRoute]);
+    if (!routeData?.origen || !routeData?.destino) {
+      return;
+    }
+    let active = true;
+    calculateRoute(routeData.origen, routeData.destino).then((calculated) => {
+      if (active && calculated) {
+        setRoute(calculated);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [routeData]);
 
   const routePoints: [number, number][] = route?.geometry.length ? route.geometry : points;
 
