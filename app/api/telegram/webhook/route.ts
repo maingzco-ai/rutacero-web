@@ -3,9 +3,17 @@ import { NextRequest, NextResponse } from 'next/server';
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-// Store temporal: uid → { code, chatId, expiresAt }
-const pendingLinks = new Map<string, { code: string; chatId?: number; expiresAt: number }>();
-const linkedUsers = new Map<string, number>(); // uid → chatId
+// Usar global store compartido con telegram-link API
+declare global {
+  var pendingLinks: Map<string, { code: string; chatId?: number; expiresAt: number }>;
+  var linkedUsers: Map<string, number>;
+}
+
+const pendingLinks = global.pendingLinks || new Map<string, { code: string; chatId?: number; expiresAt: number }>();
+const linkedUsers = global.linkedUsers || new Map<string, number>();
+
+global.pendingLinks = pendingLinks;
+global.linkedUsers = linkedUsers;
 
 function generateCode(): string {
   return Math.floor(10000 + Math.random() * 90000).toString();
