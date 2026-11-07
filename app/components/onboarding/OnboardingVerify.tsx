@@ -173,6 +173,7 @@ export function OnboardingVerify({
             className="flex justify-center gap-2 mb-4"
             role="group"
             aria-label="Código de verificación de 5 dígitos"
+            style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem' }}
           >
             {Array.from({ length: 5 }).map((_, i) => (
               <input
@@ -191,8 +192,14 @@ export function OnboardingVerify({
                 inputMode="numeric"
                 aria-label={`Dígito ${i + 1}`}
                 disabled={verifying}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  minWidth: '48px',
+                  flexShrink: 0,
+                }}
                 className={cn(
-                  'h-12 w-12 rounded-xl border text-center text-xl font-mono text-text transition-all',
+                  'rounded-xl border text-center text-xl font-mono text-text transition-all',
                   code[i]
                     ? 'border-primary bg-primary/5 text-primary font-bold'
                     : 'border-border bg-card text-text-secondary dark:border-border-dark dark:bg-card-dark',

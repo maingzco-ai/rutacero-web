@@ -141,7 +141,10 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
     goNext('verify');
   };
 
-  const handleTelegramCodeSent = () => {
+  const handleTelegramCodeSent = (uid?: string) => {
+    if (uid) {
+      setData((prev) => ({ ...prev, telegramUid: uid }));
+    }
     setSecondsLeft(60);
     setCanResend(false);
     goNext('verify');
