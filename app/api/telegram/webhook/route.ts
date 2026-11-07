@@ -1,41 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-// Usar global store compartido con telegram-link API
-declare global {
-  var pendingLinks: Map<string, { code: string; chatId?: number; expiresAt: number }>;
-  var linkedUsers: Map<string, number>;
-}
-
-const pendingLinks = global.pendingLinks || new Map<string, { code: string; chatId?: number; expiresAt: number }>();
-const linkedUsers = global.linkedUsers || new Map<string, number>();
-
-global.pendingLinks = pendingLinks;
-global.linkedUsers = linkedUsers;
-
-function generateCode(): string {
-  return Math.floor(10000 + Math.random() * 90000).toString();
-}
-
-async function sendTelegramMessage(chatId: number, text: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_URL}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: 'HTML',
-        disable_web_page_preview: true,
-      }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
+import { pendingLinks, linkedUsers, generateCode, getApiUrl } from '@/app/lib/telegram-store';
 
 export async function POST(req: NextRequest) {
   try {
@@ -154,7 +118,7 @@ export async function POST(req: NextRequest) {
 
       if (chatId && data?.startsWith('notify_')) {
         // Responder al callback
-        await fetch(`${API_URL}/answerCallbackQuery`, {
+        await fetch(`${getApiUrl()}/answerCallbackQuery`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ callback_query_id: callback_query.id }),
@@ -171,9 +135,36 @@ export async function POST(req: NextRequest) {
 
 // GET para verificación de webhook (Telegram lo llama al setear)
 export async function GET() {
-  return NextResponse.json({
-    status: 'ok',
-    bot: 'RutaCero Bot',
-    timestamp: new Date().toISOString()
-  });
+  try {
+    // Verificar que el token esté configurado
+    getApiUrl();
+    return NextResponse.json({
+      status: 'ok',
+      bot: 'RutaCero Bot',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return NextResponse.json({
+      status: 'error',
+      error: error instanceof Error ? error.message : 'Configuración incompleta'
+    }, { status: 500 });
+  }
+}
+
+async function sendTelegramMessage(chatId: number, text: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${getApiUrl()}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

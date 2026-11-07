@@ -202,6 +202,7 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   if (step === 'done') return null;
 
   const verifyLabel = data.contactMethod === 'telegram' ? 'Telegram (@Rrutabot)' : data.email || 'Correo electrónico';
+  const verifyMethod = data.contactMethod ?? undefined;
 
   return (
     <div className="fixed inset-0 z-50 bg-canvas dark:bg-background-dark overflow-hidden">
@@ -265,7 +266,7 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
           >
             <OnboardingVerify
               email={verifyLabel}
-              method={data.contactMethod}
+              method={verifyMethod}
               onVerify={handleVerifyCode}
               resendCode={handleResendCode}
               verifying={verifying}

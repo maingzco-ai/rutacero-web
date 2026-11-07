@@ -11,7 +11,7 @@ type Props = {
   onCodeSent?: () => void;
 };
 
-export function TelegramLogin({ onSuccess }: Props) {
+export function TelegramLogin({ onSuccess, onCodeSent }: Props) {
   const uidRef = useRef(crypto.randomUUID());
   const [status, setStatus] = useState<'idle' | 'waiting' | 'code_sent' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');

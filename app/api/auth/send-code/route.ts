@@ -53,7 +53,7 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, action, code } = body;
+    const { email, action, code: inputCode } = body;
 
     if (!email || !email.includes('@')) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
@@ -72,11 +72,11 @@ export async function POST(req: NextRequest) {
 
     if (action === 'verify') {
       // Verificar código
-      if (!code || code.length !== 5) {
+      if (!inputCode || inputCode.length !== 5) {
         return NextResponse.json({ error: 'Código debe tener 5 dígitos' }, { status: 400 });
       }
 
-      const valid = verifyCode(emailLower, code);
+      const valid = verifyCode(emailLower, inputCode);
       return NextResponse.json({ valid });
     }
 
@@ -137,15 +137,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Enviar código (acción por defecto)
-    const code = generateCode();
-    storeCode(emailLower, code);
+    const newCode = generateCode();
+    storeCode(emailLower, newCode);
 
     // Si no hay Resend configurado, modo desarrollo: log en consola
     if (!resend) {
-      console.log(`[DEV MODE] Código para ${email}: ${code}`);
+      console.log(`[DEV MODE] Código para ${email}: ${newCode}`);
       return NextResponse.json({
         ok: true,
-        devCode: code, // Solo en desarrollo
+        devCode: newCode, // Solo en desarrollo
         message: 'Código enviado (modo desarrollo - revisa consola del servidor)'
       });
     }
@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
           <div style="background: #f8fafc; border-radius: 16px; padding: 32px; margin-top: 16px; border: 1px solid #e2e8f0;">
             <p style="font-size: 16px; margin: 0 0 16px;">Tu código de verificación es:</p>
             <div style="background: #0B7CC0; color: white; font-size: 32px; font-weight: 700; letter-spacing: 8px; padding: 20px; border-radius: 12px; font-family: 'JetBrains Mono', monospace; margin: 16px 0;">
-              ${code}
+              ${newCode}
             </div>
             <p style="font-size: 14px; color: #64748b; margin: 16px 0 0;">
               Expira en <strong>5 minutos</strong>. No compartas este código con nadie.

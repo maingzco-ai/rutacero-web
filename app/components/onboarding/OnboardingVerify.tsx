@@ -17,7 +17,7 @@ type Props = {
   onError?: (message: string) => void;
 };
 
-export function OnboardingVerify({ email, onVerify, resendCode, verifying, canResend, secondsLeft, onError }: Props) {
+export function OnboardingVerify({ email, method, onVerify, resendCode, verifying, canResend, secondsLeft, onError }: Props) {
   const [code, setCode] = useState('');
   const [focusedDigit, setFocusedDigit] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null]);

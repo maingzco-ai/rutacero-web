@@ -110,7 +110,8 @@ export function OnboardingContactChoice({ onSelect }: Props) {
           <p className="mt-4 text-center text-xs text-text-secondary">
             Puedes cambiar tu método preferido en ajustes después
           </p>
-        </div      </Card>
+        </div>
+        </Card>
     </div>
   );
 }

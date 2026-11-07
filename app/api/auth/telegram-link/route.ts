@@ -1,16 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Stores compartidos (en producción: Redis)
-declare global {
-  var pendingLinks: Map<string, { code: string; chatId?: number; expiresAt: number }>;
-  var linkedUsers: Map<string, number>;
-}
-
-const pendingLinks = global.pendingLinks || new Map();
-const linkedUsers = global.linkedUsers || new Map();
-
-global.pendingLinks = pendingLinks;
-global.linkedUsers = linkedUsers;
+import { pendingLinks, linkedUsers, generateCode, getApiUrl } from '@/app/lib/telegram-store';
 
 export async function GET(req: NextRequest) {
   const uid = req.nextUrl.searchParams.get('uid');
@@ -71,7 +60,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Generar nuevo código
-      const newCode = Math.floor(10000 + Math.random() * 90000).toString();
+      const newCode = generateCode();
       pendingLinks.set(uid, {
         code: newCode,
         chatId: pending.chatId,
@@ -79,10 +68,7 @@ export async function POST(req: NextRequest) {
       });
 
       // Enviar por Telegram
-      const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-      const API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-      await fetch(`${API_URL}/sendMessage`, {
+      await fetch(`${getApiUrl()}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
