@@ -52,7 +52,8 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, action } = await req.json();
+    const body = await req.json();
+    const { email, action, code } = body;
 
     if (!email || !email.includes('@')) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
@@ -71,13 +72,68 @@ export async function POST(req: NextRequest) {
 
     if (action === 'verify') {
       // Verificar código
-      const { code } = await req.json();
       if (!code || code.length !== 5) {
         return NextResponse.json({ error: 'Código debe tener 5 dígitos' }, { status: 400 });
       }
 
       const valid = verifyCode(emailLower, code);
       return NextResponse.json({ valid });
+    }
+
+    if (action === 'resend') {
+      // Reenviar código (genera uno nuevo)
+      const newCode = generateCode();
+      storeCode(emailLower, newCode);
+
+      if (!resend) {
+        console.log(`[DEV MODE] Nuevo código para ${email}: ${newCode}`);
+        return NextResponse.json({
+          ok: true,
+          devCode: newCode,
+          message: 'Código reenviado (modo desarrollo - revisa consola del servidor)'
+        });
+      }
+
+      const { data, error } = await resend.emails.send({
+        from: 'RutaCero <onboarding@resend.dev>',
+        to: email,
+        subject: 'Tu nuevo código de verificación RutaCero',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #0B7CC0 0%, #22D3EE 100%); border-radius: 16px; padding: 32px; text-align: center;">
+            <h1 style="color: white; margin: 0 0 8px; font-size: 24px;">RutaCero</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;">Verificación de cuenta</p>
+          </div>
+          <div style="background: #f8fafc; border-radius: 16px; padding: 32px; margin-top: 16px; border: 1px solid #e2e8f0;">
+            <p style="font-size: 16px; margin: 0 0 16px;">Tu nuevo código de verificación es:</p>
+            <div style="background: #0B7CC0; color: white; font-size: 32px; font-weight: 700; letter-spacing: 8px; padding: 20px; border-radius: 12px; font-family: 'JetBrains Mono', monospace; margin: 16px 0;">
+              ${newCode}
+            </div>
+            <p style="font-size: 14px; color: #64748b; margin: 16px 0 0;">
+              Expira en <strong>5 minutos</strong>. No compartas este código con nadie.
+            </p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+            <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+              Si no solicitaste este código, ignora este correo. RutaCero nunca te pedirá tu código por teléfono o WhatsApp.
+            </p>
+          </div>
+          </body>
+          </html>
+        `,
+      });
+
+      if (error) {
+        console.error('Resend error:', error);
+        return NextResponse.json({ error: 'Error enviando email' }, { status: 500 });
+      }
+
+      return NextResponse.json({ ok: true, messageId: data?.id });
     }
 
     // Enviar código (acción por defecto)
@@ -96,7 +152,7 @@ export async function POST(req: NextRequest) {
 
     // Enviar con Resend
     const { data, error } = await resend.emails.send({
-      from: 'RutaCero <codigo@rutacero.co>',
+      from: 'RutaCero <onboarding@resend.dev>',
       to: email,
       subject: 'Tu código de verificación RutaCero',
       html: `

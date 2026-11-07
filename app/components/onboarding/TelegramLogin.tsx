@@ -8,6 +8,7 @@ import { cn } from '@/app/lib/design-system';
 
 type Props = {
   onSuccess: (uid: string) => void;
+  onCodeSent?: () => void;
 };
 
 export function TelegramLogin({ onSuccess }: Props) {
@@ -39,6 +40,11 @@ export function TelegramLogin({ onSuccess }: Props) {
           stopPolling();
           setStatus('success');
           onSuccess(uidRef.current);
+        } else if (data.pending && data.chatId) {
+          // Usuario ya abrió Telegram y tiene chatId -> mostrar input de código en la app
+          stopPolling();
+          setStatus('code_sent');
+          onCodeSent?.();
         } else if (data.pending) {
           setStatus('code_sent');
         } else if (data.expired) {

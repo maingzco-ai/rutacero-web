@@ -8,6 +8,7 @@ import { cn } from '@/app/lib/design-system';
 
 type Props = {
   email: string;
+  method?: 'telegram' | 'email';
   onVerify: (code: string) => void;
   resendCode: () => void;
   verifying: boolean;
@@ -101,6 +102,7 @@ export function OnboardingVerify({ email, onVerify, resendCode, verifying, canRe
   };
 
   const maskedEmail = email.replace(/^(.{2})(.+)(@.+)$/, '$1***$3');
+  const isTelegram = method === 'telegram';
 
   return (
     <div className="mx-auto max-w-md px-4 py-8 text-center">
@@ -109,10 +111,13 @@ export function OnboardingVerify({ email, onVerify, resendCode, verifying, canRe
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mx-auto mb-6">
             <ShieldCheck className="h-6 w-6" />
           </div>
-          <h2 className="text-2xl font-bold text-text mb-2">Verifica tu correo</h2>
+          <h2 className="text-2xl font-bold text-text mb-2">
+            {isTelegram ? 'Verifica tu Telegram' : 'Verifica tu correo'}
+          </h2>
           <p className="text-sm text-text-secondary mb-8">
-            Te enviamos un código de 5 dígitos a <br />
-            <span className="block text-base font-medium text-text mt-1">{maskedEmail}</span>
+            {isTelegram
+              ? 'Te enviamos un código de 5 dígitos al chat de <br /><span className="block text-base font-medium text-text mt-1">@Rrutabot</span>'
+              : `Te enviamos un código de 5 dígitos a <br /><span className="block text-base font-medium text-text mt-1">${maskedEmail}</span>`}
           </p>
 
           <div className="flex justify-center gap-2 mb-8" role="group" aria-label="Código de verificación de 5 dígitos">

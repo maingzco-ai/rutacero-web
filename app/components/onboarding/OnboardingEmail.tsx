@@ -13,7 +13,7 @@ const INSTITUTIONAL_DOMAINS = [
   { domain: 'uao.edu.co', name: 'Universidad Autónoma de Occidente (UAO)' },
 ];
 
-export function OnboardingEmail({ onConfirm }: { onConfirm: (email: string) => void }) {
+export function OnboardingEmail({ onSubmit }: { onSubmit: (email: string) => void }) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -69,7 +69,7 @@ export function OnboardingEmail({ onConfirm }: { onConfirm: (email: string) => v
 
       // Éxito: avanzar al paso de verificación
       setSubmitting(false);
-      onConfirm(normalized);
+      onSubmit(normalized);
     } catch (err) {
       setSubmitting(false);
       setError(err instanceof Error ? err.message : 'Error enviando código. Intenta de nuevo.');
