@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Mail, ShieldCheck } from 'lucide-react';
+import { Mail, ShieldCheck, Loader2 } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { validation } from '@/app/lib/design-system';
 
 const INSTITUTIONAL_DOMAINS = [
   { domain: 'icesi.edu.co', name: 'Universidad Icesi' },
@@ -19,6 +18,7 @@ export function OnboardingEmail({ onConfirm }: { onConfirm: (email: string) => v
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [isValid, setIsValid] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
 
   useEffect(() => {
     setError(null);
@@ -31,19 +31,9 @@ export function OnboardingEmail({ onConfirm }: { onConfirm: (email: string) => v
     setIsValid(!!domain);
   }, [email]);
 
-  // Auto-avance cuando el correo es válido y el usuario deja de escribir
-  useEffect(() => {
-    if (!isValid || submitting) return;
-    const timer = setTimeout(() => {
-      const normalized = email.trim().toLowerCase();
-      onConfirm(normalized);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [email, isValid, submitting, onConfirm]);
-
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (submitting) return;
+    if (submitting || sendingCode) return;
     setError(null);
 
     if (!email.trim()) {
@@ -62,10 +52,28 @@ export function OnboardingEmail({ onConfirm }: { onConfirm: (email: string) => v
     }
 
     setSubmitting(true);
-    setTimeout(() => {
+
+    try {
+      // Enviar código por email
+      const response = await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalized }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error enviando código');
+      }
+
+      // Éxito: avanzar al paso de verificación
       setSubmitting(false);
       onConfirm(normalized);
-    }, 600);
+    } catch (err) {
+      setSubmitting(false);
+      setError(err instanceof Error ? err.message : 'Error enviando código. Intenta de nuevo.');
+    }
   };
 
   return (
@@ -89,7 +97,7 @@ export function OnboardingEmail({ onConfirm }: { onConfirm: (email: string) => v
               onChange={(e) => setEmail(e.target.value)}
               error={error ?? undefined}
               icon={<Mail className="h-4 w-4 text-text-secondary" />}
-              disabled={submitting}
+              disabled={submitting || sendingCode}
               autoComplete="email"
               required
             />
@@ -107,9 +115,9 @@ export function OnboardingEmail({ onConfirm }: { onConfirm: (email: string) => v
               <p className="text-xs text-error animate-slide-up">{error}</p>
             )}
 
-            {!error && isValid && (
+            {!error && isValid && !submitting && (
               <p className="text-xs text-primary font-medium animate-slide-up">
-                Correo válido · validando…
+                Correo válido · listo para enviar código
               </p>
             )}
 
@@ -118,14 +126,20 @@ export function OnboardingEmail({ onConfirm }: { onConfirm: (email: string) => v
               variant="primary"
               fullWidth
               loading={submitting}
-              disabled={submitting || !isValid}
+              disabled={submitting || sendingCode || !isValid}
             >
-              {isValid ? 'Validar correo' : 'Correo inválido'}
+              {submitting
+                ? 'Enviando código…'
+                : isValid
+                  ? 'Enviar código de verificación'
+                  : 'Correo inválido'}
             </Button>
           </form>
 
           <p className="text-xs text-text-secondary mt-4">
             Solo correos institucionales. No se aceptan @gmail.com ni correos personales.
+            <br />
+            Te enviaremos un código de 5 dígitos a tu bandeja de entrada.
           </p>
         </div>
       </Card>

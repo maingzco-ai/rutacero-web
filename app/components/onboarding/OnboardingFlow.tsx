@@ -89,24 +89,42 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
     goNext('verify');
   };
 
-  const handleVerifyCode = (code: string) => {
+  const handleVerifyCode = async (code: string) => {
     setVerifying(true);
-    // Simular validación del servidor (código correcto si empieza con 1 o es 12345 para demo)
-    const isValid = code === '12345' || code.startsWith('1');
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email, action: 'verify', code }),
+      });
+
+      const result = await response.json();
       setVerifying(false);
-      if (isValid) {
+
+      if (result.valid) {
         goNext('welcome');
       } else {
-        // Código inválido: notificar error para que OnboardingVerify limpie el estado
-        // OnboardingVerify usa onError prop para resetear
+        // Código inválido - OnboardingVerify manejará el reset
       }
-    }, 800);
+    } catch {
+      setVerifying(false);
+      // Error de red - OnboardingVerify permitirá reintento
+    }
   };
 
-  const handleResendCode = () => {
-    setSecondsLeft(60);
-    setCanResend(false);
+  const handleResendCode = async () => {
+    if (!data.email) return;
+    try {
+      await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email }),
+      });
+      setSecondsLeft(60);
+      setCanResend(false);
+    } catch {
+      // Silenciar error, UI mostrará que puede reintentar
+    }
   };
 
   const handleWelcomeFinish = () => {
