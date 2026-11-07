@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getPendingLinks,
+  setPendingLink,
   getLinkedUsers,
   setLinkedUser,
   deleteLinkedUser,
