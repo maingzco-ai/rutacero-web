@@ -144,7 +144,38 @@ export function resolverPunto(texto: string): PuntoCali {
  * Catálogo de viajes publicados. Inicia vacío: sin datos simulados ni de demostración.
  * Los viajes se agregan únicamente cuando un usuario publica una ruta real.
  */
-export const catalogTrips: Trip[] = [];
+export let catalogTrips: Trip[] = [];
+
+/**
+ * Agrega un viaje publicado al catálogo buscable.
+ * Convierte PublishedRoute a Trip para que aparezca en búsquedas.
+ */
+export function addPublishedToCatalog(published: import('./types').PublishedRoute): Trip {
+  const trip: Trip = {
+    id: published.id,
+    origin: published.origin,
+    destination: published.destination,
+    driver: {
+      id: `drv-${published.id}`,
+      name: 'Conductor',
+      rating: 5.0,
+      trips: 0,
+      vehicle: published.vehicle,
+      plate: published.plate,
+      university: 'Universidad',
+    },
+    seats: published.seats,
+    seatsTaken: 0,
+    price: published.price,
+    departure: published.departure,
+    arrival: '',
+    dateLabel: 'Hoy',
+    corridor: 'Sur',
+    status: 'disponible',
+  };
+  catalogTrips = [trip, ...catalogTrips];
+  return trip;
+}
 
 /**
  * Busca viajes publicados que coincidan con origen/destino.

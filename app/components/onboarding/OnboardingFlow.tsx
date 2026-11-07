@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { OnboardingSplash } from './OnboardingSplash';
 import { OnboardingRole } from './OnboardingRole';
@@ -31,6 +31,7 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   const [verifying, setVerifying] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [canResend, setCanResend] = useState(false);
+  const onFinishCalled = useRef(false);
 
   // Cargar estado previo de onboarding
   useEffect(() => {
@@ -47,13 +48,18 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
             completedAt: parsed.completedAt ?? null,
           }));
           setStep('done');
+          // Call onFinish for returning users so HomeExperience shows content
+          if (!onFinishCalled.current) {
+            onFinishCalled.current = true;
+            onFinish();
+          }
           return;
         }
       }
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [onFinish]);
 
   // Temporizador de reenvío de código
   useEffect(() => {
@@ -92,10 +98,8 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
       if (isValid) {
         goNext('welcome');
       } else {
-        // Código inválido, limpiar para que el usuario intente de nuevo
-        // El componente OnboardingVerify llama onVerify automáticamente al completar 5 dígitos
-        // Para permitir reintento, notificamos al padre limpiando el estado del código
-        // El padre manejará esto
+        // Código inválido: notificar error para que OnboardingVerify limpie el estado
+        // OnboardingVerify usa onError prop para resetear
       }
     }, 800);
   };
@@ -169,6 +173,9 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
               verifying={verifying}
               canResend={canResend}
               secondsLeft={secondsLeft}
+              onError={() => {
+                // Reset code state on error - OnboardingVerify handles this internally
+              }}
             />
           </motion.div>
         )}

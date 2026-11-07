@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Mail, ShieldCheck, ArrowRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { Input } from '../ui/Input';
 import { cn } from '@/app/lib/design-system';
 
 type Props = {
@@ -14,45 +13,93 @@ type Props = {
   verifying: boolean;
   canResend: boolean;
   secondsLeft: number;
+  onError?: (message: string) => void;
 };
 
-export function OnboardingVerify({ email, onVerify, resendCode, verifying, canResend, secondsLeft }: Props) {
+export function OnboardingVerify({ email, onVerify, resendCode, verifying, canResend, secondsLeft, onError }: Props) {
   const [code, setCode] = useState('');
   const [focusedDigit, setFocusedDigit] = useState(0);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null]);
+  const hasVerified = useRef(false);
+
+  // Focus management
+  const focusInput = (index: number) => {
+    inputRefs.current[index]?.focus();
+  };
 
   useEffect(() => {
-    if (code.length === 5) {
+    focusInput(0);
+  }, []);
+
+  // Only trigger verification once when code reaches 5 digits
+  useEffect(() => {
+    if (code.length === 5 && !hasVerified.current) {
+      hasVerified.current = true;
       onVerify(code);
+    } else if (code.length < 5) {
+      hasVerified.current = false;
     }
   }, [code, onVerify]);
 
   const handleDigitChange = (index: number, value: string) => {
-    const digits = value.replace(/\D/g, '');
-    const next = Array.from({ length: 5 }, (_, i) => digits[i] || '');
-    setCode(next.join(''));
+    const digit = value.replace(/\D/g, '').slice(0, 1);
+    const nextCode = code.split('');
+    nextCode[index] = digit;
+    const joined = nextCode.join('');
+    setCode(joined);
 
-    if (digits[index] && index < 4) {
+    // Auto-advance focus
+    if (digit && index < 4) {
       setFocusedDigit(index + 1);
+      focusInput(index + 1);
     }
   };
 
   const handlePaste = (event: React.ClipboardEvent) => {
+    event.preventDefault();
     const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 5);
-    setCode(padded(pasted));
-    setFocusedDigit(pasted.length < 5 ? pasted.length : 4);
-  };
+    const padded = pasted.padEnd(5, '');
+    setCode(padded);
+    setFocusedDigit(Math.min(pasted.length, 4));
+    focusInput(Math.min(pasted.length, 4));
 
-  const padded = (value: string): string => value.padEnd(5, '');
+    // Trigger verification if complete
+    if (pasted.length === 5) {
+      hasVerified.current = true;
+      onVerify(pasted);
+    }
+  };
 
   const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
-    if (event.key === 'Backspace' && !code[index] && index > 0) {
-      setFocusedDigit(index - 1);
+    if (event.key === 'Backspace') {
+      if (!code[index] && index > 0) {
+        setFocusedDigit(index - 1);
+        focusInput(index - 1);
+      } else if (code[index]) {
+        // Clear current and move back
+        const nextCode = code.split('');
+        nextCode[index] = '';
+        setCode(nextCode.join(''));
+      }
     }
-    if (event.key === 'ArrowRight' && index < 4) setFocusedDigit(index + 1);
-    if (event.key === 'ArrowLeft' && index > 0) setFocusedDigit(index - 1);
+    if (event.key === 'ArrowRight' && index < 4) {
+      setFocusedDigit(index + 1);
+      focusInput(index + 1);
+    }
+    if (event.key === 'ArrowLeft' && index > 0) {
+      setFocusedDigit(index - 1);
+      focusInput(index - 1);
+    }
   };
 
-  const domain = email.split('@')[1] || '';
+  const handleResend = () => {
+    hasVerified.current = false;
+    setCode('');
+    setFocusedDigit(0);
+    focusInput(0);
+    resendCode();
+  };
+
   const maskedEmail = email.replace(/^(.{2})(.+)(@.+)$/, '$1***$3');
 
   return (
@@ -68,45 +115,51 @@ export function OnboardingVerify({ email, onVerify, resendCode, verifying, canRe
             <span className="block text-base font-medium text-text mt-1">{maskedEmail}</span>
           </p>
 
-          <div className="flex justify-center gap-2 mb-8">
-            {Array.from({ length: 5 }).map((_, i) => {
-              const isFilled = !!code[i];
-              const isFocused = focusedDigit === i && !isFilled;
-              return (
-                <input
-                  key={i}
-                  type="text"
-                  maxLength={1}
-                  value={code[i] || ''}
-                  onChange={(e) => handleDigitChange(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, i)}
-                  onPaste={handlePaste}
-                  autoFocus={i === 0}
-                  autoComplete="one-time-code"
-                  inputMode="numeric"
-                  className={cn(
-                    'h-12 w-12 rounded-xl border text-center text-xl font-mono text-text transition-all',
-                    isFilled
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border bg-card text-text-secondary dark:border-border-dark dark:bg-card-dark dark:text-text-secondary',
-                    isFocused
-                      ? 'ring-2 ring-primary/50 border-primary shadow-[0_0_0_3px_rgba(11,124,192,0.15)]'
-                      : '',
-                  )}
-                />
-              );
-            })}
+          <div className="flex justify-center gap-2 mb-8" role="group" aria-label="Código de verificación de 5 dígitos">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <input
+                key={i}
+                ref={(el) => { inputRefs.current[i] = el; }}
+                type="text"
+                maxLength={1}
+                value={code[i] || ''}
+                onChange={(e) => handleDigitChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, i)}
+                onPaste={handlePaste}
+                autoFocus={i === 0}
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                aria-label={`Dígito ${i + 1}`}
+                disabled={verifying}
+                className={cn(
+                  'h-12 w-12 rounded-xl border text-center text-xl font-mono text-text transition-all',
+                  code[i]
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-border bg-card text-text-secondary dark:border-border-dark dark:bg-card-dark dark:text-text-secondary',
+                  focusedDigit === i && !code[i]
+                    ? 'ring-2 ring-primary/50 border-primary shadow-[0_0_0_3px_rgba(11,124,192,0.15)]'
+                    : '',
+                  verifying && 'opacity-50 cursor-wait'
+                )}
+              />
+            ))}
           </div>
 
+          {verifying && (
+            <p className="text-xs text-primary mb-4" role="status" aria-live="polite">
+              Verificando código...
+            </p>
+          )}
+
           <p className="text-xs text-text-secondary mb-6">
-            ¿No recibiste el código?
+            ¿No recibiste el código?{' '}
             <button
               type="button"
-              onClick={resendCode}
-              disabled={!canResend}
+              onClick={handleResend}
+              disabled={!canResend || verifying}
               className={cn(
                 'ml-1 font-medium transition-colors',
-                !canResend ? 'text-text-secondary' : 'text-primary underline decoration-primary/40 underline-offset-2 hover:text-primary-dark',
+                !canResend || verifying ? 'text-text-secondary' : 'text-primary underline decoration-primary/40 underline-offset-2 hover:text-primary-dark',
               )}
             >
               {canResend ? 'Reenviar código' : `Reenviar en ${secondsLeft}s`}

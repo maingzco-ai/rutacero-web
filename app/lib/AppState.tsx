@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { generatePin } from './design-system';
-import { trips as catalogTrips } from './catalog';
+import { trips as catalogTrips, addPublishedToCatalog } from './catalog';
 import type {
   AppNotification,
   Conversation,
@@ -58,16 +58,18 @@ function sanitizePersisted(raw: unknown): Persisted | null {
   const isArray = (v: unknown): v is unknown[] => Array.isArray(v);
   const isString = (v: unknown): v is string => typeof v === 'string';
   const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+  const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-  const safe = (arr: unknown[], itemGuard: (v: unknown) => boolean): unknown[] =>
+  // Safe array filter with type guard
+  const safeArray = (arr: unknown[], itemGuard: (v: unknown) => v is Record<string, unknown>): Record<string, unknown>[] =>
     (arr ?? []).filter(itemGuard);
 
   return {
-    reservations: isArray(obj.reservations) ? safe(obj.reservations, isString) : [],
-    published: isArray(obj.published) ? safe(obj.published, isString) : [],
-    conversations: isArray(obj.conversations) ? safe(obj.conversations, isString) : [],
-    notifications: isArray(obj.notifications) ? safe(obj.notifications, isString) : [],
-    ledger: isArray(obj.ledger) ? safe(obj.ledger, isString) : [],
+    reservations: isArray(obj.reservations) ? safeArray(obj.reservations, isObject) as Reservation[] : [],
+    published: isArray(obj.published) ? safeArray(obj.published, isObject) as PublishedRoute[] : [],
+    conversations: isArray(obj.conversations) ? safeArray(obj.conversations, isObject) as Conversation[] : [],
+    notifications: isArray(obj.notifications) ? safeArray(obj.notifications, isObject) as AppNotification[] : [],
+    ledger: isArray(obj.ledger) ? safeArray(obj.ledger, isObject) as LedgerEntry[] : [],
     balance: isNumber(obj.balance) ? obj.balance : 0,
     preferredPayment: isString(obj.preferredPayment) ? obj.preferredPayment : '',
   } as Persisted;
@@ -127,10 +129,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       if (!isSafeString(tripId) || !isSafeString(pickup) || !isSafeString(preference)) {
         return null;
       }
+      // Check for existing confirmed reservation on same trip
+      const existing = reservations.find(r => r.tripId === tripId && r.status === 'confirmada');
+      if (existing) return null;
+
       const trip = catalogTrips.find((item) => item.id === tripId);
       if (!trip || trip.seatsTaken >= trip.seats) return null;
+
+      // Generate unique ID with crypto.randomUUID fallback
+      const reservationId = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? `res-${crypto.randomUUID()}`
+        : `res-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const ledgerId = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? `l-${crypto.randomUUID()}`
+        : `l-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const notifId = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? `n-${crypto.randomUUID()}`
+        : `n-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
       const reservation: Reservation = {
-        id: `res-${Date.now()}`,
+        id: reservationId,
         tripId,
         pin: generatePin(),
         pickup,
@@ -142,7 +160,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setBalance((prev) => prev - trip.price);
       setLedger((prev) => [
         {
-          id: `l-${Date.now()}`,
+          id: ledgerId,
           label: `Cupo · ${trip.origin} → ${trip.destination}`,
           amount: -trip.price,
           at: nowLabel(),
@@ -152,7 +170,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       ]);
       setNotifications((prev) => [
         {
-          id: `n-${Date.now()}`,
+          id: notifId,
           title: 'Cupo reservado',
           body: `PIN ${reservation.pin}. ${trip.driver.name} sale a las ${trip.departure}.`,
           at: 'Ahora',
@@ -163,30 +181,45 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       ]);
       return reservation;
     },
-    [],
+    [reservations],
   );
 
   const publishRoute = useCallback((route: Omit<PublishedRoute, 'id' | 'createdAt'>): PublishedRoute => {
+    const safeString = (value: string): boolean => {
+      // Allow common Spanish chars, punctuation, spaces, and basic symbols
+      return /^[a-zA-Z0-9áéíóúñÁÉÍÓÚÑüÜ\s,.\-()#/:°º'&]+$/.test(value);
+    };
+
     if (
-      !isSafeString(route.origin) ||
-      !isSafeString(route.destination) ||
-      !isSafeString(route.plate) ||
-      !isSafeString(route.vehicle) ||
+      !safeString(route.origin) ||
+      !safeString(route.destination) ||
+      !safeString(route.plate) ||
+      !safeString(route.vehicle) ||
+      !safeString(route.departure || '') ||
       !Number.isInteger(route.seats) ||
       route.seats < 1 ||
       route.seats > 8
     ) {
       throw new Error('Datos de ruta inválidos');
     }
+    const publishedId = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? `pub-${crypto.randomUUID()}`
+      : `pub-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const notifId = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? `n-${crypto.randomUUID()}`
+      : `n-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
     const created: PublishedRoute = {
       ...route,
-      id: `pub-${Date.now()}`,
+      id: publishedId,
       createdAt: nowLabel(),
     };
     setPublished((prev) => [created, ...prev]);
+    // Add to searchable catalog
+    addPublishedToCatalog(created);
     setNotifications((prev) => [
       {
-        id: `n-${Date.now()}`,
+        id: notifId,
         title: 'Ruta publicada',
         body: `${route.origin} → ${route.destination} a las ${route.departure}.`,
         at: 'Ahora',

@@ -225,7 +225,11 @@ export function getInitials(name: string): string {
 export const validation = {
   email: (email: string): boolean => {
     const domains = ['icesi.edu.co', 'javerianacali.edu.co', 'uao.edu.co', 'correounivalle.edu.co'];
-    return /^[^@\s]+@[^@\s]+$/.test(email) && domains.some(d => email.toLowerCase().endsWith(d));
+    const emailLower = email.toLowerCase().trim();
+    const atIndex = emailLower.lastIndexOf('@');
+    if (atIndex <= 0) return false;
+    const domain = emailLower.slice(atIndex + 1);
+    return /^[^@\s]+@[^@\s]+$/.test(emailLower) && domains.includes(domain);
   },
 
   whatsapp: (phone: string): boolean => {
