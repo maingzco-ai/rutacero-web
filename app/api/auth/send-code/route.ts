@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       }
 
       const { data, error } = await resend.emails.send({
-        from: 'RutaCero <onboarding@resend.dev>',
+        from: 'RutaCero <magredoorozco@gmail.com>',
         to: email,
         subject: 'Tu nuevo código de verificación RutaCero',
         html: `
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
 
     // Enviar con Resend
     const { data, error } = await resend.emails.send({
-      from: 'RutaCero <onboarding@resend.dev>',
+      from: 'RutaCero <magredoorozco@gmail.com>',
       to: email,
       subject: 'Tu código de verificación RutaCero',
       html: `
