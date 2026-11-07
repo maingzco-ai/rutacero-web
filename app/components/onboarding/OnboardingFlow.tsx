@@ -4,18 +4,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { OnboardingSplash } from './OnboardingSplash';
 import { OnboardingRole } from './OnboardingRole';
-import { OnboardingEmail } from './OnboardingEmail';
 import { OnboardingVerify } from './OnboardingVerify';
 import { OnboardingWelcome } from './OnboardingWelcome';
+import { TelegramLogin } from './TelegramLogin';
 import { brand } from '@/app/lib/brand';
 
-type Step = 'splash' | 'role' | 'email' | 'verify' | 'welcome' | 'done';
+type Step = 'splash' | 'role' | 'telegram' | 'verify' | 'welcome' | 'done';
 
 const STORAGE_KEY = 'rutacero-onboarding';
 
 type OnboardingData = {
   role: 'conductor' | 'viajero' | 'ambos' | null;
-  email: string | null;
+  telegramUid: string | null;
+  telegramChatId: number | null;
   isFirstTrip: boolean;
   completedAt: string | null;
 };
@@ -24,7 +25,8 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   const [step, setStep] = useState<Step>('splash');
   const [data, setData] = useState<OnboardingData>({
     role: null,
-    email: null,
+    telegramUid: null,
+    telegramChatId: null,
     isFirstTrip: true,
     completedAt: null,
   });
@@ -39,16 +41,16 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<OnboardingData>;
-        if (parsed.role && parsed.email) {
+        if (parsed.role && parsed.telegramChatId) {
           setData((prev) => ({
             ...prev,
             role: parsed.role as 'conductor' | 'viajero' | 'ambos',
-            email: parsed.email as string,
+            telegramUid: parsed.telegramUid ?? null,
+            telegramChatId: parsed.telegramChatId ?? null,
             isFirstTrip: parsed.isFirstTrip ?? true,
             completedAt: parsed.completedAt ?? null,
           }));
           setStep('done');
-          // Call onFinish for returning users so HomeExperience shows content
           if (!onFinishCalled.current) {
             onFinishCalled.current = true;
             onFinish();
@@ -79,11 +81,11 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
 
   const handleRoleSelect = (role: 'conductor' | 'viajero' | 'ambos') => {
     setData((prev) => ({ ...prev, role }));
-    goNext('email');
+    goNext('telegram');
   };
 
-  const handleEmailConfirm = (email: string) => {
-    setData((prev) => ({ ...prev, email }));
+  const handleTelegramSuccess = (uid: string) => {
+    setData((prev) => ({ ...prev, telegramUid: uid }));
     setSecondsLeft(60);
     setCanResend(false);
     goNext('verify');
@@ -92,10 +94,10 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   const handleVerifyCode = async (code: string) => {
     setVerifying(true);
     try {
-      const response = await fetch('/api/auth/send-code', {
+      const response = await fetch('/api/auth/telegram-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.email, action: 'verify', code }),
+        body: JSON.stringify({ uid: data.telegramUid, code }),
       });
 
       const result = await response.json();
@@ -103,27 +105,24 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
 
       if (result.valid) {
         goNext('welcome');
-      } else {
-        // Código inválido - OnboardingVerify manejará el reset
       }
     } catch {
       setVerifying(false);
-      // Error de red - OnboardingVerify permitirá reintento
     }
   };
 
   const handleResendCode = async () => {
-    if (!data.email) return;
+    if (!data.telegramUid) return;
     try {
-      await fetch('/api/auth/send-code', {
+      await fetch('/api/auth/telegram-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.email }),
+        body: JSON.stringify({ uid: data.telegramUid, action: 'resend' }),
       });
       setSecondsLeft(60);
       setCanResend(false);
     } catch {
-      // Silenciar error, UI mostrará que puede reintentar
+      // Silenciar error
     }
   };
 
@@ -167,14 +166,14 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
             <OnboardingRole onSelect={handleRoleSelect} />
           </motion.div>
         )}
-        {step === 'email' && (
+        {step === 'telegram' && (
           <motion.div
-            key="email"
+            key="telegram"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
           >
-            <OnboardingEmail onConfirm={handleEmailConfirm} />
+            <TelegramLogin onSuccess={handleTelegramSuccess} />
           </motion.div>
         )}
         {step === 'verify' && (
@@ -185,15 +184,13 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
             exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
           >
             <OnboardingVerify
-              email={data.email!}
+              email={`Telegram vinculado`}
               onVerify={handleVerifyCode}
               resendCode={handleResendCode}
               verifying={verifying}
               canResend={canResend}
               secondsLeft={secondsLeft}
-              onError={() => {
-                // Reset code state on error - OnboardingVerify handles this internally
-              }}
+              onError={() => {}}
             />
           </motion.div>
         )}
