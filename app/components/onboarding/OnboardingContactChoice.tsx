@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Mail, MessageSquare, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { cn } from '@/app/lib/design-system';
 
-type Method = 'telegram' | 'email';
+type Method = 'telegram' | 'email' | 'demo';
 
 interface Props {
   onSelect: (method: Method) => void;
@@ -15,7 +15,7 @@ interface Props {
 export function OnboardingContactChoice({ onSelect }: Props) {
   const [method, setMethod] = useState<Method | null>(null);
 
-  const METHODS: { value: Method; label: string; subtitle: string; icon: React.ComponentType<{ className?: string }>; benefits: string[] }[] = [
+  const METHODS: { value: Method; label: string; subtitle: string; icon: React.ComponentType<{ className?: string }>; benefits: string[]; badge?: string }[] = [
     {
       value: 'telegram',
       label: 'Telegram',
@@ -38,6 +38,19 @@ export function OnboardingContactChoice({ onSelect }: Props) {
         'Código de 5 dígitos en tu bandeja de entrada',
         'Expira en 5 minutos por seguridad',
         'Puedes cambiarlo en tu perfil después',
+      ],
+    },
+    {
+      value: 'demo',
+      label: 'Modo DEMO',
+      subtitle: 'Saltarse verificación (solo evaluación)',
+      icon: Sparkles,
+      badge: 'DEMO',
+      benefits: [
+        'Acceso inmediato sin email ni Telegram',
+        'Código de prueba: 12345',
+        'Datos de prueba precargados',
+        'Ideal para revisar la app completa',
       ],
     },
   ];
@@ -63,12 +76,17 @@ export function OnboardingContactChoice({ onSelect }: Props) {
                   type="button"
                   onClick={() => setMethod(m.value)}
                   className={cn(
-                    'flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition-all',
+                    'flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition-all relative',
                     isSelected
                       ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10 dark:bg-primary/5'
                       : 'border-border bg-card hover:border-borderHover hover:bg-secondary/50 dark:border-border-dark dark:bg-card-dark dark:hover:bg-muted/30',
                   )}
                 >
+                  {m.badge && (
+                    <span className="absolute -top-2 -right-2 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-extrabold text-accent-dark dark:text-accent border border-accent/30">
+                      {m.badge}
+                    </span>
+                  )}
                   <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Icon className="h-6 w-6" />
                   </div>
@@ -98,12 +116,19 @@ export function OnboardingContactChoice({ onSelect }: Props) {
 
           <div className="mt-8">
             <Button
-              variant="primary"
+              variant={method === 'demo' ? 'secondary' : 'primary'}
               fullWidth
               disabled={!method}
               onClick={() => method && onSelect(method)}
             >
-              Continuar con {method === 'telegram' ? 'Telegram' : 'Correo'}
+              {method === 'demo' ? (
+                <>
+                  <Sparkles className="h-4 w-4 text-accent" />
+                  Continuar en Modo DEMO
+                </>
+              ) : (
+                `Continuar con ${method === 'telegram' ? 'Telegram' : 'Correo'}`
+              )}
             </Button>
           </div>
 

@@ -16,7 +16,7 @@ const STORAGE_KEY = 'rutacero-onboarding';
 
 type OnboardingData = {
   role: 'conductor' | 'viajero' | 'ambos' | null;
-  contactMethod: 'telegram' | 'email' | null;
+  contactMethod: 'telegram' | 'email' | 'demo' | null;
   telegramUid: string | null;
   telegramChatId: number | null;
   email: string | null;
@@ -129,9 +129,14 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
     goNext('contact');
   };
 
-  const handleContactSelect = (method: 'telegram' | 'email') => {
+  const handleContactSelect = (method: 'telegram' | 'email' | 'demo') => {
     setData((prev) => ({ ...prev, contactMethod: method }));
-    goNext(method === 'telegram' ? 'telegram' : 'email');
+    if (method === 'demo') {
+      // Skip verification and go directly to welcome
+      goNext('welcome');
+    } else {
+      goNext(method === 'telegram' ? 'telegram' : 'email');
+    }
   };
 
   const handleTelegramSuccess = (uid: string) => {
@@ -256,7 +261,7 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   if (step === 'done') return null;
 
   const verifyLabel = data.contactMethod === 'telegram' ? 'Telegram (@Rrutabot)' : data.email || 'Correo institucional';
-  const verifyMethod = data.contactMethod ?? undefined;
+  const verifyMethod = (data.contactMethod === 'telegram' || data.contactMethod === 'email') ? data.contactMethod : undefined;
 
   return (
     <div className="fixed inset-x-0 top-0 bottom-0 z-50 bg-canvas dark:bg-background-dark overflow-y-auto">
