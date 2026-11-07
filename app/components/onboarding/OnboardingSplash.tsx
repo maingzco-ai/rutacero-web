@@ -11,6 +11,7 @@ export function OnboardingSplash({ onFinish }: { onFinish: () => void }) {
     // Barra de carga progresiva durante ~3 segundos, llega a 100% y avanza
     let start = 0;
     let raf: number | null = null;
+    let timer: NodeJS.Timeout | null = null;
 
     const step = (now: number) => {
       if (!start) start = now;
@@ -21,16 +22,16 @@ export function OnboardingSplash({ onFinish }: { onFinish: () => void }) {
         raf = requestAnimationFrame(step);
       } else {
         // Al llegar al 100%, esperar un poco y avanzar
-        const t = setTimeout(() => {
+        timer = setTimeout(() => {
           onFinish();
         }, 300);
-        return () => clearTimeout(t);
       }
     };
 
     raf = requestAnimationFrame(step);
     return () => {
       if (raf) cancelAnimationFrame(raf);
+      if (timer) clearTimeout(timer);
     };
   }, [onFinish]);
 
