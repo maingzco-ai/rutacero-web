@@ -51,7 +51,7 @@ export default function HomeExperience() {
   };
 
   const appContent = (
-    <div className="relative h-[calc(100dvh-33px)] overflow-hidden">
+    <div className="relative h-dvh overflow-hidden">
       <div className="absolute inset-0">
         <InteractiveMap routeData={routeData} className="h-full rounded-none" />
       </div>

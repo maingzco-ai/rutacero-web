@@ -81,19 +81,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={`${inter.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-canvas text-text font-sans dark:bg-background-dark dark:text-text-dark flex flex-col">
-        {/* Elemento visual DEMO en la parte superior de la interfaz de usuario */}
-        <aside
-          role="region"
-          aria-label="Aviso de versión demostrativa"
-          className="sticky top-0 z-[100] flex w-full items-center justify-center gap-2 border-b border-primary-dark/20 bg-gradient-to-r from-primary via-primary-dark to-primary px-3 py-1.5 text-center text-xs font-bold uppercase tracking-widest text-white shadow-sm"
-        >
-          <span className="inline-flex h-2 w-2 rounded-full bg-accent animate-pulse" aria-hidden="true" />
-          <span className="font-extrabold text-white tracking-widest">DEMO</span>
-          <span className="hidden text-[11px] font-medium text-white/90 sm:inline">
-            · Plataforma de Movilidad Compartida · Cali, Colombia
-          </span>
-        </aside>
-
         <ThemeProvider>
           <AppStateProvider>{children}</AppStateProvider>
         </ThemeProvider>

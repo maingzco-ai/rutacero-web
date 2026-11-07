@@ -35,14 +35,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Route className="h-4 w-4" aria-hidden="true" />
             </span>
             <span className="leading-tight">
-              <span className="flex items-center gap-1.5">
-                <span className="block text-sm font-bold tracking-tight">{brand.name}</span>
-                <span className="rounded-full bg-primary/10 dark:bg-accent/20 px-1.5 py-0.2 text-[9px] font-extrabold text-primary dark:text-accent border border-primary/20 dark:border-accent/30">
-                  DEMO
-                </span>
-              </span>
-              <span className="block text-[11px] text-text-secondary">{brand.tagline}</span>
+              <span className="block text-sm font-bold tracking-tight">{brand.name}</span>
             </span>
+            <span className="block text-[11px] text-text-secondary">{brand.tagline}</span>
           </Link>
         </div>
 

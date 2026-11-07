@@ -259,7 +259,7 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   const verifyMethod = data.contactMethod ?? undefined;
 
   return (
-    <div className="fixed inset-x-0 top-[33px] bottom-0 z-50 bg-canvas dark:bg-background-dark overflow-y-auto">
+    <div className="fixed inset-x-0 top-0 bottom-0 z-50 bg-canvas dark:bg-background-dark overflow-y-auto">
       <AnimatePresence mode="wait">
         {step === 'splash' && (
           <motion.div
