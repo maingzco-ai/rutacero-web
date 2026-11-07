@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pendingLinks, linkedUsers, generateCode, getApiUrl } from '@/app/lib/telegram-store';
+import {
+  getPendingLinks,
+  getLinkedUsers,
+  setLinkedUser,
+  deleteLinkedUser,
+  deletePendingLink,
+  generateCode,
+  getApiUrl,
+} from '@/app/lib/telegram-store';
 
 export async function GET(req: NextRequest) {
   const uid = req.nextUrl.searchParams.get('uid');
@@ -9,6 +17,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Verificar si ya está vinculado
+  const linkedUsers = await getLinkedUsers();
   if (linkedUsers.has(uid)) {
     return NextResponse.json({
       linked: true,
@@ -16,12 +25,13 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Verificar si hay código pendiente (usuario abrió Telegram pero no envió /start)
+  // Verificar si hay código pendiente
+  const pendingLinks = await getPendingLinks();
   const pending = pendingLinks.get(uid);
   if (pending) {
     // Verificar expiración
     if (Date.now() > pending.expiresAt) {
-      pendingLinks.delete(uid);
+      await deletePendingLink(uid);
       return NextResponse.json({ linked: false, expired: true });
     }
 
@@ -30,6 +40,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         linked: false,
         pending: true,
+        chatId: pending.chatId,
         message: 'Código enviado. Revisa Telegram.'
       });
     }
@@ -49,6 +60,7 @@ export async function POST(req: NextRequest) {
 
     // Acción: reenviar código
     if (action === 'resend') {
+      const pendingLinks = await getPendingLinks();
       const pending = pendingLinks.get(uid);
 
       if (!pending) {
@@ -61,7 +73,7 @@ export async function POST(req: NextRequest) {
 
       // Generar nuevo código
       const newCode = generateCode();
-      pendingLinks.set(uid, {
+      await setPendingLink(uid, {
         code: newCode,
         chatId: pending.chatId,
         expiresAt: Date.now() + 5 * 60 * 1000,
@@ -86,6 +98,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Código requerido' }, { status: 400 });
     }
 
+    const pendingLinks = await getPendingLinks();
     const pending = pendingLinks.get(uid);
 
     if (!pending) {
@@ -93,16 +106,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (Date.now() > pending.expiresAt) {
-      pendingLinks.delete(uid);
+      await deletePendingLink(uid);
       return NextResponse.json({ valid: false, error: 'Código expirado. Solicita uno nuevo.' });
     }
 
     if (pending.code === code) {
       // ¡Código correcto! Vincular permanentemente
       if (pending.chatId) {
-        linkedUsers.set(uid, pending.chatId);
+        await setLinkedUser(uid, pending.chatId);
       }
-      pendingLinks.delete(uid);
+      await deletePendingLink(uid);
 
       return NextResponse.json({
         valid: true,

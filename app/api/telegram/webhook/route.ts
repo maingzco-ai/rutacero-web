@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pendingLinks, linkedUsers, generateCode, getApiUrl } from '@/app/lib/telegram-store';
+import {
+  getPendingLinks,
+  setPendingLink,
+  deletePendingLink,
+  getLinkedUsers,
+  setLinkedUser,
+  deleteLinkedUser,
+  generateCode,
+  getApiUrl,
+} from '@/app/lib/telegram-store';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,6 +22,9 @@ export async function POST(req: NextRequest) {
       const userId = message.from?.id;
       const username = message.from?.username;
 
+      const pendingLinks = await getPendingLinks();
+      const linkedUsers = await getLinkedUsers();
+
       // Comando /start UID → vincular cuenta
       if (text.startsWith('/start ')) {
         const uid = text.split(' ')[1];
@@ -20,7 +32,7 @@ export async function POST(req: NextRequest) {
         if (uid && uid.length > 10) { // UUID válido
           const code = generateCode();
 
-          pendingLinks.set(uid, {
+          await setPendingLink(uid, {
             code,
             chatId,
             expiresAt: Date.now() + 5 * 60 * 1000, // 5 min
@@ -55,7 +67,7 @@ export async function POST(req: NextRequest) {
 
         if (foundUid) {
           const code = generateCode();
-          pendingLinks.set(foundUid, {
+          await setPendingLink(foundUid, {
             code,
             chatId,
             expiresAt: Date.now() + 5 * 60 * 1000,
@@ -85,7 +97,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (foundUid) {
-          linkedUsers.delete(foundUid);
+          await deleteLinkedUser(foundUid);
           await sendTelegramMessage(chatId, `✅ Cuenta desvinculada correctamente.`);
         } else {
           await sendTelegramMessage(chatId, `ℹ️ No tenías cuenta vinculada.`);
@@ -168,3 +180,15 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<boolea
     return false;
   }
 }
+
+// Exportar funciones para que telegram-link las use
+export {
+  getPendingLinks,
+  setPendingLink,
+  deletePendingLink,
+  getLinkedUsers,
+  setLinkedUser,
+  deleteLinkedUser,
+  generateCode,
+  getApiUrl,
+} from '@/app/lib/telegram-store';

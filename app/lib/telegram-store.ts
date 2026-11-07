@@ -1,7 +1,4 @@
-// Store compartido para Telegram (en producción: Upstash Redis)
-// En serverless Vercel, esto se reinicia por invocación, pero funciona si ambas
-// APIs se ejecutan en la misma instancia (lo cual pasa a menudo en dev/preview)
-// Para producción real: migrar a Upstash Redis o similar
+import { Redis } from '@upstash/redis';
 
 export interface PendingLink {
   code: string;
@@ -9,14 +6,55 @@ export interface PendingLink {
   expiresAt: number;
 }
 
-declare global {
-  var __telegram_pendingLinks: Map<string, PendingLink> | undefined;
-  var __telegram_linkedUsers: Map<string, number> | undefined;
+// Cliente Redis singleton
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+const PENDING_KEY = 'telegram:pendingLinks';
+const LINKED_KEY = 'telegram:linkedUsers';
+
+export async function getPendingLinks(): Promise<Map<string, PendingLink>> {
+  const data = await redis.hgetall(PENDING_KEY);
+  const map = new Map<string, PendingLink>();
+  if (data) {
+    for (const [uid, value] of Object.entries(data)) {
+      map.set(uid, JSON.parse(value as string));
+    }
+  }
+  return map;
 }
 
-// Singleton pattern para compartir entre invocaciones en la misma instancia
-export const pendingLinks = global.__telegram_pendingLinks ??= new Map<string, PendingLink>();
-export const linkedUsers = global.__telegram_linkedUsers ??= new Map<string, number>();
+export async function setPendingLink(uid: string, link: PendingLink): Promise<void> {
+  await redis.hset(PENDING_KEY, { [uid]: JSON.stringify(link) });
+  // TTL automático de 6 min (código expira en 5)
+  await redis.expire(PENDING_KEY, 360);
+}
+
+export async function deletePendingLink(uid: string): Promise<void> {
+  await redis.hdel(PENDING_KEY, uid);
+}
+
+export async function getLinkedUsers(): Promise<Map<string, number>> {
+  const data = await redis.hgetall(LINKED_KEY);
+  const map = new Map<string, number>();
+  if (data) {
+    for (const [uid, chatId] of Object.entries(data)) {
+      map.set(uid, Number(chatId));
+    }
+  }
+  return map;
+}
+
+export async function setLinkedUser(uid: string, chatId: number): Promise<void> {
+  await redis.hset(LINKED_KEY, { [uid]: chatId.toString() });
+  // Sin TTL - vinculado permanente
+}
+
+export async function deleteLinkedUser(uid: string): Promise<void> {
+  await redis.hdel(LINKED_KEY, uid);
+}
 
 export function generateCode(): string {
   return Math.floor(10000 + Math.random() * 90000).toString(); // 5 dígitos
