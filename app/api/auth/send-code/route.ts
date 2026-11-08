@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #0F172A; max-width: 580px; margin: 0 auto; padding: 24px; background-color: #F8FAFC;">
           <div style="background: linear-gradient(135deg, #0B7CC0 0%, #085E9A 100%); border-radius: 16px; padding: 32px; text-align: center; color: white;">
-            <div style="display: inline-block; background: rgba(255,255,255,0.15); border-radius: 9999px; padding: 6px 14px; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px;">DEMO · RUTACERO</div>
+            <div style="display: inline-block; background: rgba(255,255,255,0.15); border-radius: 9999px; padding: 6px 14px; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px;">RUTACERO · CALI</div>
             <h1 style="color: white; margin: 0 0 6px; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">RutaCero</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 14px;">Movilidad Universitaria Cali</p>
           </div>

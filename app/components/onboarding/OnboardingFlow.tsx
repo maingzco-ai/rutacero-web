@@ -9,6 +9,7 @@ import { OnboardingVerify } from './OnboardingVerify';
 import { OnboardingWelcome } from './OnboardingWelcome';
 import { TelegramLogin } from './TelegramLogin';
 import { OnboardingEmail } from './OnboardingEmail';
+import { EASE } from '@/app/lib/motion';
 
 type Step = 'splash' | 'role' | 'contact' | 'telegram' | 'email' | 'verify' | 'welcome' | 'done';
 
@@ -24,26 +25,27 @@ type OnboardingData = {
   completedAt: string | null;
 };
 
-// Lazy initialization: read from localStorage once during initial render
+function emptyData(): OnboardingData {
+  return {
+    role: null,
+    contactMethod: null,
+    telegramUid: null,
+    telegramChatId: null,
+    email: null,
+    isFirstTrip: true,
+    completedAt: null,
+  };
+}
+
 function getInitialData(): OnboardingData {
-  if (typeof window === 'undefined') {
-    return {
-      role: null,
-      contactMethod: null,
-      telegramUid: null,
-      telegramChatId: null,
-      email: null,
-      isFirstTrip: true,
-      completedAt: null,
-    };
-  }
+  if (typeof window === 'undefined') return emptyData();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<OnboardingData>;
       if (parsed.role && (parsed.telegramChatId || parsed.email || parsed.completedAt)) {
         return {
-          role: parsed.role as 'conductor' | 'viajero' | 'ambos',
+          role: parsed.role as OnboardingData['role'],
           contactMethod: parsed.contactMethod ?? 'email',
           telegramUid: parsed.telegramUid ?? null,
           telegramChatId: parsed.telegramChatId ?? null,
@@ -56,27 +58,25 @@ function getInitialData(): OnboardingData {
   } catch {
     /* ignore */
   }
-  return {
-    role: null,
-    contactMethod: null,
-    telegramUid: null,
-    telegramChatId: null,
-    email: null,
-    isFirstTrip: true,
-    completedAt: null,
-  };
+  return emptyData();
 }
 
-function getInitialStep(initialData: OnboardingData): Step {
-  if (initialData.role && (initialData.telegramChatId || initialData.email || initialData.completedAt)) {
-    return 'done';
-  }
-  return 'splash';
+function Stage({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 26, scale: 0.99 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -18, scale: 0.995, transition: { duration: 0.32, ease: [0.7, 0, 0.84, 0] } }}
+      transition={{ duration: 0.8, ease: EASE }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
-  const [step, setStep] = useState<Step>(() => getInitialStep(getInitialData()));
-  const [data, setData] = useState<OnboardingData>(() => getInitialData());
+  const [step, setStep] = useState<Step>('splash');
+  const [data, setData] = useState<OnboardingData>(emptyData);
   const [verifying, setVerifying] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(60);
@@ -84,7 +84,16 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   const onFinishCalled = useRef(false);
   const finishedRef = useRef(false);
 
-  // Auto-finish if initial data indicates completed onboarding
+  // Resolve a previously completed onboarding only after hydration so the
+  // server and client render the same initial tree.
+  useEffect(() => {
+    const stored = getInitialData();
+    if (stored.role && (stored.telegramChatId || stored.email || stored.completedAt)) {
+      setData(stored);
+      setStep('done');
+    }
+  }, []);
+
   useEffect(() => {
     if (step === 'done' && !finishedRef.current) {
       finishedRef.current = true;
@@ -95,29 +104,15 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
     }
   }, [step, onFinish]);
 
-  // Temporizador de reenvío de código - using refs to track state without setState in effect
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const secondsLeftRef = useRef(secondsLeft);
-  const canResendRef = useRef(canResend);
-
   useEffect(() => {
-    secondsLeftRef.current = secondsLeft;
-    canResendRef.current = canResend;
-
-    if (canResendRef.current) return;
-    let timer: NodeJS.Timeout | null = null;
-    if (secondsLeftRef.current > 0) {
-      timer = setInterval(() => {
-        setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
-      }, 1000);
-    } else {
+    if (step !== 'verify' || canResend) return;
+    if (secondsLeft <= 0) {
       setCanResend(true);
+      return;
     }
-    timerRef.current = timer;
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, []); // Intentionally empty: refs provide current values
+    const timer = setTimeout(() => setSecondsLeft((value) => Math.max(0, value - 1)), 1000);
+    return () => clearTimeout(timer);
+  }, [step, canResend, secondsLeft]);
 
   const goNext = useCallback((next: Step) => {
     setErrorMessage(null);
@@ -132,7 +127,6 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   const handleContactSelect = (method: 'telegram' | 'email' | 'demo') => {
     setData((prev) => ({ ...prev, contactMethod: method }));
     if (method === 'demo') {
-      // Skip verification and go directly to welcome
       goNext('welcome');
     } else {
       goNext(method === 'telegram' ? 'telegram' : 'email');
@@ -147,9 +141,7 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   };
 
   const handleTelegramCodeSent = (uid?: string) => {
-    if (uid) {
-      setData((prev) => ({ ...prev, telegramUid: uid }));
-    }
+    if (uid) setData((prev) => ({ ...prev, telegramUid: uid }));
     setSecondsLeft(60);
     setCanResend(false);
     goNext('verify');
@@ -173,32 +165,23 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid: data.telegramUid, code }),
         });
-
         const result = await response.json();
         setVerifying(false);
 
-        if (result.valid) {
-          goNext('welcome');
-        } else {
-          setErrorMessage(result.error || 'Código incorrecto. Verifica e intenta de nuevo.');
-        }
+        if (result.valid) goNext('welcome');
+        else setErrorMessage(result.error || 'Código incorrecto. Verifica e intenta de nuevo.');
       } else if (data.contactMethod === 'email' && data.email) {
         const response = await fetch('/api/auth/send-code', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: data.email, code, action: 'verify' }),
         });
-
         const result = await response.json();
         setVerifying(false);
 
-        if (result.valid) {
-          goNext('welcome');
-        } else {
-          setErrorMessage(result.error || 'Código incorrecto o expirado.');
-        }
+        if (result.valid) goNext('welcome');
+        else setErrorMessage(result.error || 'Código incorrecto o expirado.');
       } else {
-        // Fallback demostración
         setVerifying(false);
         goNext('welcome');
       }
@@ -212,15 +195,13 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
     setErrorMessage(null);
     if (data.contactMethod === 'telegram' && data.telegramUid) {
       try {
-        const res = await fetch('/api/auth/telegram-link', {
+        const response = await fetch('/api/auth/telegram-link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid: data.telegramUid, action: 'resend' }),
         });
-        const resData = await res.json();
-        if (resData.devCode) {
-          sessionStorage.setItem('rc_last_demo_code', resData.devCode);
-        }
+        const result = await response.json();
+        if (result.devCode) sessionStorage.setItem('rc_last_demo_code', result.devCode);
         setSecondsLeft(60);
         setCanResend(false);
       } catch {
@@ -228,15 +209,13 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
       }
     } else if (data.contactMethod === 'email' && data.email) {
       try {
-        const res = await fetch('/api/auth/send-code', {
+        const response = await fetch('/api/auth/send-code', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: data.email, action: 'resend' }),
         });
-        const resData = await res.json();
-        if (resData.devCode) {
-          sessionStorage.setItem('rc_last_demo_code', resData.devCode);
-        }
+        const result = await response.json();
+        if (result.devCode) sessionStorage.setItem('rc_last_demo_code', result.devCode);
         setSecondsLeft(60);
         setCanResend(false);
       } catch {
@@ -246,8 +225,8 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
   };
 
   const handleWelcomeFinish = () => {
-    const now = new Date().toISOString();
-    const updated = { ...data, completedAt: now };
+    onFinishCalled.current = true;
+    const updated = { ...data, completedAt: new Date().toISOString() };
     setData(updated);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -260,69 +239,44 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
 
   if (step === 'done') return null;
 
-  const verifyLabel = data.contactMethod === 'telegram' ? 'Telegram (@Rrutabot)' : data.email || 'Correo institucional';
-  const verifyMethod = (data.contactMethod === 'telegram' || data.contactMethod === 'email') ? data.contactMethod : undefined;
+  const verifyLabel =
+    data.contactMethod === 'telegram' ? 'Telegram (@Rrutabot)' : data.email || 'Correo institucional';
+  const verifyMethod =
+    data.contactMethod === 'telegram' || data.contactMethod === 'email' ? data.contactMethod : undefined;
 
   return (
-    <div className="fixed inset-x-0 top-0 bottom-0 z-50 bg-canvas dark:bg-background-dark overflow-y-auto">
+    <div
+      className="fixed inset-0 z-[200] overflow-y-auto overscroll-contain bg-[#04060c]/55 backdrop-blur-md"
+      data-lenis-prevent
+    >
       <AnimatePresence mode="wait">
         {step === 'splash' && (
-          <motion.div
-            key="splash"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.2 } }}
-          >
+          <Stage key="splash">
             <OnboardingSplash onFinish={() => goNext('role')} />
-          </motion.div>
+          </Stage>
         )}
         {step === 'role' && (
-          <motion.div
-            key="role"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-          >
+          <Stage key="role">
             <OnboardingRole onSelect={handleRoleSelect} />
-          </motion.div>
+          </Stage>
         )}
         {step === 'contact' && (
-          <motion.div
-            key="contact"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-          >
+          <Stage key="contact">
             <OnboardingContactChoice onSelect={handleContactSelect} />
-          </motion.div>
+          </Stage>
         )}
         {step === 'telegram' && (
-          <motion.div
-            key="telegram"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-          >
+          <Stage key="telegram">
             <TelegramLogin onSuccess={handleTelegramSuccess} onCodeSent={handleTelegramCodeSent} />
-          </motion.div>
+          </Stage>
         )}
         {step === 'email' && (
-          <motion.div
-            key="email"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-          >
+          <Stage key="email">
             <OnboardingEmail onSubmit={handleEmailSubmit} />
-          </motion.div>
+          </Stage>
         )}
         {step === 'verify' && (
-          <motion.div
-            key="verify"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-          >
+          <Stage key="verify">
             <OnboardingVerify
               email={verifyLabel}
               method={verifyMethod}
@@ -333,17 +287,12 @@ export function OnboardingFlow({ onFinish }: { onFinish: () => void }) {
               secondsLeft={secondsLeft}
               errorMessage={errorMessage}
             />
-          </motion.div>
+          </Stage>
         )}
         {step === 'welcome' && (
-          <motion.div
-            key="welcome"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-          >
+          <Stage key="welcome">
             <OnboardingWelcome isFirstTrip={data.isFirstTrip} onFinish={handleWelcomeFinish} />
-          </motion.div>
+          </Stage>
         )}
       </AnimatePresence>
     </div>

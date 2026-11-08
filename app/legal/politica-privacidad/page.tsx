@@ -1,5 +1,10 @@
 import { PoliticaPrivacidad } from '../politica-privacidad';
+import { LegalFrame } from '../LegalFrame';
 
 export default function PoliticaPrivacidadPage() {
-  return <PoliticaPrivacidad />;
+  return (
+    <LegalFrame>
+      <PoliticaPrivacidad />
+    </LegalFrame>
+  );
 }

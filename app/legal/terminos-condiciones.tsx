@@ -10,15 +10,16 @@ export function TerminosCondiciones() {
   const [aceptado, setAceptado] = useState(false);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-text">Términos y Condiciones de Uso</h1>
-        <p className="mt-2 text-sm text-text-secondary">
+    <div>
+      <header className="mb-8 border-b border-white/[0.08] pb-6">
+        <p className="hud mb-3 text-[7.5px]">Contrato de uso · versión vigente</p>
+        <h1 className="display text-[1.9rem] leading-tight text-text sm:text-[2.4rem]">Términos y Condiciones</h1>
+        <p className="mt-3 font-mono text-[9px] text-text-secondary/60">
           Versión {TERMINOS_VERSION} · Vigente desde {new Date(TERMINOS_FECHA).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </header>
 
-      <article className="prose prose-slate dark:prose-invert max-w-none space-y-6">
+      <article className="legal-prose">
         <section>
           <h2>1. Identificación del Responsable</h2>
           <p>RutaCero (en adelante, &quot;la Plataforma&quot;) es un servicio de intermediación tecnológica para carpooling (viajes compartidos) operado por:</p>
@@ -199,20 +200,20 @@ export function TerminosCondiciones() {
         </section>
       </article>
 
-      <div className="mt-8 pt-6 border-t border-border">
-        <label className="flex items-start gap-3 cursor-pointer">
+      <div className="mt-8 rounded-[22px] border border-white/[0.09] bg-white/[0.03] p-4">
+        <label className="flex cursor-pointer items-start gap-3">
           <input
             type="checkbox"
             checked={aceptado}
             onChange={(e) => setAceptado(e.target.checked)}
-            className={cn('mt-1 h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/50')}
+            className={cn('mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-white/10 accent-[#7c9cff]')}
             required
           />
-          <span className="text-sm text-text">
+          <span className="text-[12px] leading-relaxed text-text">
             He leído, entiendo y acepto los <strong>Términos y Condiciones</strong> y la <a href="/legal/politica-privacidad" className="text-primary underline">Política de Privacidad</a> de RutaCero.
           </span>
         </label>
-        <p className="mt-3 text-xs text-text-secondary">
+        <p className="mt-3 pl-7 text-[10px] leading-relaxed text-text-secondary/60">
           Al aceptar, autorizas el tratamiento de tus datos personales conforme a la Ley 1581/2012 y recibes comunicaciones transaccionales necesarias para el servicio. Las comunicaciones promocionales requieren opt-in separado en Configuración.
         </p>
       </div>

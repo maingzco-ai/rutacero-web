@@ -23,32 +23,28 @@ interface InteractiveMapProps {
   } | null;
   className?: string;
   showDirections?: boolean;
+  hud?: boolean;
 }
 
 function FitRoute({ points }: { points: [number, number][] }) {
   const map = useMap();
   useEffect(() => {
     if (points.length < 2) return;
-    map.fitBounds(points, { padding: [48, 48], maxZoom: 14 });
+    map.fitBounds(points, { padding: [56, 56], maxZoom: 14 });
   }, [map, points]);
   return null;
 }
 
 const STEP_ICON: Record<CalculatedRoute['steps'][number]['type'] | string, string> = {
-  start: '📍',
-  turn: '🔄',
-  continue: '➡️',
-  roundabout: '🔁',
-  arrive: '🏁',
+  start: '◎',
+  turn: '↱',
+  continue: '↑',
+  roundabout: '↻',
+  arrive: '◈',
 };
 
-export default function InteractiveMap({
-  routeData,
-  className,
-}: InteractiveMapProps) {
+export default function InteractiveMap({ routeData, className, hud = true }: InteractiveMapProps) {
   const center: [number, number] = [3.372, -76.532];
-  const zoom = 13;
-
   const [route, setRoute] = useState<CalculatedRoute | null>(null);
 
   const icons = useMemo(
@@ -56,24 +52,24 @@ export default function InteractiveMap({
       origin: L.divIcon({
         className: 'rc-marker rc-marker-origin',
         html: '<span></span>',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-        popupAnchor: [0, -12],
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+        popupAnchor: [0, -14],
       }),
       stop: (num: number) =>
         L.divIcon({
           className: 'rc-marker rc-marker-stop',
           html: `<span>${num}</span>`,
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
-          popupAnchor: [0, -14],
+          iconSize: [26, 26],
+          iconAnchor: [13, 13],
+          popupAnchor: [0, -16],
         }),
       destination: L.divIcon({
         className: 'rc-marker rc-marker-destination',
         html: '<span></span>',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-        popupAnchor: [0, -12],
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+        popupAnchor: [0, -14],
       }),
     }),
     [],
@@ -89,14 +85,10 @@ export default function InteractiveMap({
   }, [routeData]);
 
   useEffect(() => {
-    if (!routeData?.origen || !routeData?.destino) {
-      return;
-    }
+    if (!routeData?.origen || !routeData?.destino) return;
     let active = true;
     calculateRoute(routeData.origen, routeData.destino).then((calculated) => {
-      if (active && calculated) {
-        setRoute(calculated);
-      }
+      if (active && calculated) setRoute(calculated);
     });
     return () => {
       active = false;
@@ -106,56 +98,106 @@ export default function InteractiveMap({
   const routePoints: [number, number][] = route?.geometry.length ? route.geometry : points;
 
   return (
-    <MapContainer
-      center={center}
-      zoom={zoom}
-      style={{ height: '100%', width: '100%', minHeight: '240px' }}
-      scrollWheelZoom
-      zoomControl={false}
-      className={cn('h-full w-full', className)}
-    >
-      <TileLayer
-        attribution='&copy; OpenStreetMap &copy; CARTO'
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-        maxZoom={19}
-      />
+    <div className={cn('map-frame relative h-full w-full overflow-hidden', className)}>
+      <MapContainer
+        center={center}
+        zoom={13}
+        style={{ height: '100%', width: '100%', minHeight: '240px' }}
+        scrollWheelZoom
+        zoomControl={false}
+        attributionControl
+        className="map-dark h-full w-full"
+      >
+        <TileLayer
+          attribution="Esri, HERE, Garmin &copy; OpenStreetMap contributors"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={19}
+        />
+        <TileLayer
+          attribution="Esri · Reference"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+          maxZoom={19}
+          opacity={0.9}
+        />
 
-      {routeData && (
-        <>
-          <FitRoute points={points} />
-          {routePoints.length >= 2 && (
-            <Polyline
-              positions={routePoints}
-              color="#0B7CC0"
-              weight={5}
-              opacity={0.92}
-              lineCap="round"
-              lineJoin="round"
-            />
-          )}
-          <Marker position={[routeData.origen.lat, routeData.origen.lng]} icon={icons.origin}>
-            <Popup closeButton={false}>
-              <p className="font-semibold">{routeData.origen.name}</p>
-              <p className="text-sm text-text-secondary">{routeData.origen.estimatedTime ?? 'Origen'}</p>
-            </Popup>
-          </Marker>
-          {routeData.paradas.map((stop, idx) => (
-            <Marker key={`${stop.name}-${idx}`} position={[stop.lat, stop.lng]} icon={icons.stop(idx + 1)}>
+        {routeData && (
+          <>
+            <FitRoute points={points} />
+            {routePoints.length >= 2 && (
+              <>
+                <Polyline
+                  positions={routePoints}
+                  color="#5ce9dc"
+                  weight={16}
+                  opacity={0.10}
+                  lineCap="round"
+                  lineJoin="round"
+                />
+                <Polyline
+                  positions={routePoints}
+                  color="#7c9cff"
+                  weight={7}
+                  opacity={0.22}
+                  lineCap="round"
+                  lineJoin="round"
+                />
+                <Polyline
+                  positions={routePoints}
+                  color="#c9d6ff"
+                  weight={2.4}
+                  opacity={0.95}
+                  lineCap="round"
+                  lineJoin="round"
+                  dashArray="1 9"
+                />
+              </>
+            )}
+            <Marker position={[routeData.origen.lat, routeData.origen.lng]} icon={icons.origin}>
               <Popup closeButton={false}>
-                <p className="font-semibold">{stop.name}</p>
-                <p className="text-sm text-text-secondary">{stop.estimatedTime ?? 'Parada'}</p>
+                <p className="font-semibold">{routeData.origen.name}</p>
+                <p className="text-sm opacity-70">{routeData.origen.estimatedTime ?? 'Origen'}</p>
               </Popup>
             </Marker>
-          ))}
-          <Marker position={[routeData.destino.lat, routeData.destino.lng]} icon={icons.destination}>
-            <Popup closeButton={false}>
-              <p className="font-semibold">{routeData.destino.name}</p>
-              <p className="text-sm text-text-secondary">{routeData.destino.estimatedTime ?? 'Destino'}</p>
-            </Popup>
-          </Marker>
-        </>
+            {routeData.paradas.map((stop, index) => (
+              <Marker key={`${stop.name}-${index}`} position={[stop.lat, stop.lng]} icon={icons.stop(index + 1)}>
+                <Popup closeButton={false}>
+                  <p className="font-semibold">{stop.name}</p>
+                  <p className="text-sm opacity-70">{stop.estimatedTime ?? 'Parada'}</p>
+                </Popup>
+              </Marker>
+            ))}
+            <Marker position={[routeData.destino.lat, routeData.destino.lng]} icon={icons.destination}>
+              <Popup closeButton={false}>
+                <p className="font-semibold">{routeData.destino.name}</p>
+                <p className="text-sm opacity-70">{routeData.destino.estimatedTime ?? 'Destino'}</p>
+              </Popup>
+            </Marker>
+          </>
+        )}
+      </MapContainer>
+
+      {hud && (
+        <div className="pointer-events-none absolute left-4 top-4 z-[500] flex items-center gap-2">
+          <span className="glass flex items-center gap-1.5 rounded-full px-2.5 py-1.5">
+            <span className="h-1 w-1 animate-pulse rounded-full bg-accent" />
+            <span className="font-mono text-[8px] uppercase tracking-[0.16em] text-text-secondary">Ruta óptima</span>
+          </span>
+          {route && (
+            <span className="glass hidden items-center gap-1.5 rounded-full px-2.5 py-1.5 sm:flex">
+              <span className="font-mono text-[8px] uppercase tracking-[0.16em] text-text-secondary">
+                {route.distanceText} · {route.durationText}
+              </span>
+            </span>
+          )}
+        </div>
       )}
-    </MapContainer>
+
+      <div className="pointer-events-none absolute bottom-4 right-4 z-[500]">
+        <span className="font-mono text-[7.5px] uppercase tracking-[0.18em] text-text-secondary/50">
+          Cali · 03°22′ N / 76°31′ O
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -168,64 +210,66 @@ interface RouteDirectionsProps {
 
 export function RouteDirections({ route, originName, destName, className }: RouteDirectionsProps) {
   return (
-    <div className={cn('rounded-2xl border border-border bg-card shadow-md p-4 dark:border-border-dark dark:bg-card-dark', className)}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white text-xs font-bold">
-            O
-          </div>
-          <p className="text-sm font-medium text-text truncate">{originName}</p>
+    <div className={cn('glass relative overflow-hidden rounded-[26px] p-5', className)}>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
+      />
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="hud text-[7.5px]">Origen</p>
+          <p className="mt-1 truncate text-[12px] font-medium text-text">{originName}</p>
         </div>
-        <div className="h-3 w-px bg-secondary" />
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-dark text-white text-xs font-bold">
-            D
-          </div>
-          <p className="text-sm font-medium text-text truncate">{destName}</p>
+        <div className="flex flex-1 items-center gap-1.5 px-2">
+          <span className="h-1.5 w-1.5 rounded-full border border-white/60 bg-white" />
+          <span className="h-px flex-1 bg-gradient-to-r from-primary/70 via-accent/60 to-violet/40" />
+          <span className="h-1.5 w-1.5 rounded-full border border-accent/80 bg-accent/40" />
+        </div>
+        <div className="min-w-0 text-right">
+          <p className="hud text-[7.5px]">Destino</p>
+          <p className="mt-1 truncate text-[12px] font-medium text-text">{destName}</p>
         </div>
       </div>
 
       {route ? (
         <>
-          <div className="flex items-center justify-between gap-4 mb-4 p-3 rounded-xl bg-secondary/50 dark:bg-muted/40">
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">Distancia</p>
-              <p className="text-lg font-bold text-text">{route.distanceText}</p>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2">
+              <p className="hud text-[7px]">Distancia</p>
+              <p className="mt-1 font-mono text-[14px] text-text">{route.distanceText}</p>
             </div>
-            <div className="h-5 w-px bg-secondary" />
-            <div className="text-center">
-              <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">Tiempo estimado</p>
-              <p className="text-lg font-bold text-text">{route.durationText}</p>
+            <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2">
+              <p className="hud text-[7px]">Tiempo estimado</p>
+              <p className="mt-1 font-mono text-[14px] text-accent">{route.durationText}</p>
             </div>
           </div>
 
-          <div className="space-y-2">
-            {route.steps.slice(0, 8).map((step, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-2.5"
-              >
-                <span className="flex shrink-0 items-center justify-center h-5 w-5 rounded-full bg-primary text-white text-[10px] font-bold leading-none">
-                  {STEP_ICON[step.type] ?? '➡️'}
+          <div className="mt-4 max-h-56 space-y-1 overflow-y-auto pr-1 no-scrollbar" data-lenis-prevent>
+            {route.steps.slice(0, 8).map((step, index) => (
+              <div key={index} className="flex items-start gap-2.5 rounded-lg px-1 py-1.5 transition-colors hover:bg-white/[0.03]">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] font-mono text-[9px] text-primary-light">
+                  {STEP_ICON[step.type] ?? '↑'}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-text">{step.instruction}</p>
-                  <p className="mt-0.5 text-xs text-text-secondary">
-                    {step.distanceText ?? `${Math.round(step.distance / 1000).toFixed(1)} km`} · {step.durationText ?? `${Math.round(step.duration / 60)} min`}
+                  <p className="text-[11px] leading-snug text-text/85">{step.instruction}</p>
+                  <p className="mt-0.5 font-mono text-[8.5px] text-text-secondary/55">
+                    {step.distanceText ?? `${Math.round(step.distance / 1000).toFixed(1)} km`} ·{' '}
+                    {step.durationText ?? `${Math.round(step.duration / 60)} min`}
                   </p>
                 </div>
               </div>
             ))}
             {route.steps.length > 8 && (
-              <p className="mt-1 text-xs text-text-secondary italic">
-                +{route.steps.length - 8} paso{route.steps.length - 8 > 1 ? 's' : ''} más
+              <p className="pl-7 pt-1 font-mono text-[8px] uppercase tracking-[0.14em] text-text-secondary/40">
+                +{route.steps.length - 8} pasos
               </p>
             )}
           </div>
         </>
       ) : (
-        <div className="text-center py-6 text-text-secondary">
-          <p className="text-sm">Calculando ruta óptima…</p>
+        <div className="flex items-center justify-center gap-2 py-6">
+          <span className="h-1 w-1 animate-ping rounded-full bg-accent" />
+          <p className="hud text-[8px]">Calculando ruta óptima</p>
         </div>
       )}
     </div>

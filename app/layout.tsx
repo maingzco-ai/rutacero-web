@@ -1,14 +1,26 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Geist_Mono } from 'next/font/google';
+import { Sora, Instrument_Serif, Geist_Mono } from 'next/font/google';
 import { AppStateProvider } from './lib/AppState';
 import { ThemeProvider } from './hooks/useTheme';
+import { DepthProvider } from './hooks/useDepth';
+import { AtmosphereMount } from './components/fx/AtmosphereMount';
+import { CursorLens } from './components/fx/CursorLens';
 import { brand } from './lib/brand';
 import './globals.css';
 
-const inter = Inter({
+const sora = Sora({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-sora',
   display: 'swap',
+  weight: ['300', '400', '500', '600', '700'],
+});
+
+const instrument = Instrument_Serif({
+  subsets: ['latin'],
+  variable: '--font-instrument',
+  display: 'swap',
+  weight: '400',
+  style: ['normal', 'italic'],
 });
 
 const geistMono = Geist_Mono({
@@ -20,11 +32,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://rutacero.co'),
   title: {
-    default: `${brand.name} [DEMO] · ${brand.tagline}`,
+    default: `${brand.name} — ${brand.tagline}`,
     template: `%s · ${brand.name}`,
   },
   description:
-    'RutaCero es carpooling para Cali, Colombia. Comparte el camino hacia la universidad o el trabajo con cupos verificados, tarifa justa y PIN de abordaje. Movilidad compartida segura y confiable en el corredor sur de Cali.',
+    'RutaCero es movilidad compartida para Cali. Cupos verificados, tarifa justa y PIN de abordaje en el corredor universitario del sur de la ciudad.',
   keywords: [
     'carpooling',
     'Cali',
@@ -43,7 +55,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'es_CO',
     url: 'https://rutacero.co',
-    title: `${brand.name} [DEMO] · ${brand.tagline}`,
+    title: `${brand.name} — ${brand.tagline}`,
     description: brand.shortTagline,
     siteName: brand.name,
     images: [
@@ -57,7 +69,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${brand.name} [DEMO] · ${brand.tagline}`,
+    title: `${brand.name} — ${brand.tagline}`,
     description: brand.shortTagline,
     images: ['/og-image.png'],
   },
@@ -68,10 +80,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#0B7CC0' },
-    { media: '(prefers-color-scheme: dark)', color: '#0F172A' },
-  ],
+  themeColor: '#04060c',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -79,10 +88,22 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${inter.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-canvas text-text font-sans dark:bg-background-dark dark:text-text-dark flex flex-col">
+    <html
+      lang="es"
+      className={`${sora.variable} ${instrument.variable} ${geistMono.variable} dark h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-full bg-background text-text font-sans selection:bg-primary/30">
         <ThemeProvider>
-          <AppStateProvider>{children}</AppStateProvider>
+          <DepthProvider>
+            <AtmosphereMount />
+            <div className="noise-layer" aria-hidden="true" />
+            <div className="scanlines" aria-hidden="true" />
+            <CursorLens />
+            <AppStateProvider>
+              <div className="relative z-10 flex min-h-dvh flex-col">{children}</div>
+            </AppStateProvider>
+          </DepthProvider>
         </ThemeProvider>
       </body>
     </html>

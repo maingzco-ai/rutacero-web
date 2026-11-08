@@ -101,7 +101,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<AppNotification[]>([
     {
       id: 'notif-welcome',
-      title: 'Bienvenido a RutaCero Cali [DEMO]',
+      title: 'Bienvenido a RutaCero Cali',
       body: 'Tu cuenta está lista para reservar cupos universitarios o publicar rutas compartidas.',
       at: 'Hoy',
       read: false,
@@ -111,7 +111,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [ledger, setLedger] = useState<LedgerEntry[]>([
     {
       id: 'l-init',
-      label: 'Recarga inicial de cortesía [DEMO]',
+      label: 'Recarga inicial de cortesía',
       amount: 25000,
       at: 'Hoy',
       type: 'abono',

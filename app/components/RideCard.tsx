@@ -39,8 +39,7 @@ export const RideCard = memo(function RideCard({
         <div className="flex items-center gap-3 p-4 pb-3 border-b border-border dark:border-border-dark">
           <span
             aria-hidden="true"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-            style={{ backgroundColor: '#0B7CC0' }}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(145deg,#eef3ff,#b9c8ff_50%,#7c9cff)] text-sm font-bold text-[#07101f] shadow-[0_0_24px_-8px_rgba(124,156,255,0.8)]"
           >
             {getInitials(passengerName)}
           </span>
@@ -103,12 +102,12 @@ export const RideCard = memo(function RideCard({
         {/* PIN de seguridad */}
         <div className="p-4">
           {isOnBoard ? (
-            <div className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white">
+            <div className="flex items-center justify-center gap-2 rounded-xl bg-success/15 px-4 py-2.5 text-sm font-semibold text-success">
               <Lock className="h-4 w-4" aria-hidden="true" />
               A bordo · Viaje seguro
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/40 bg-canvas px-4 py-2.5 text-sm font-semibold text-primary dark:bg-primary/20 dark:border-primary/30 dark:text-primary">
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-primary/35 bg-primary/[0.06] px-4 py-2.5 font-mono text-sm font-semibold tracking-[0.12em] text-primary-light">
               <KeyRound className="h-4 w-4" aria-hidden="true" />
               PIN de seguridad: {pin}
             </div>

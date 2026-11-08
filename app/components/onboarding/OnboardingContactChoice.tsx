@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, MessageSquare, CheckCircle2, Sparkles } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, Mail, MessageSquare, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
+import { OnboardingStage } from './OnboardingStage';
 import { cn } from '@/app/lib/design-system';
+import { springSnap } from '@/app/lib/motion';
 
 type Method = 'telegram' | 'email' | 'demo';
 
@@ -12,131 +14,157 @@ interface Props {
   onSelect: (method: Method) => void;
 }
 
+const METHODS: {
+  value: Method;
+  label: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  benefits: string[];
+  badge?: string;
+}[] = [
+  {
+    value: 'telegram',
+    label: 'Telegram',
+    subtitle: 'Gratis · sin exponer tu número',
+    icon: MessageSquare,
+    benefits: ['Código y notificaciones en el chat', 'Privacidad total del teléfono', 'Desvinculación inmediata con /desvincular'],
+  },
+  {
+    value: 'email',
+    label: 'Correo institucional',
+    subtitle: 'Código OTP de 5 dígitos',
+    icon: Mail,
+    benefits: ['@icesi · @javerianacali · @uao · @corunivalle', 'Código con vigencia de 5 minutos', 'Cambiable desde tu perfil'],
+  },
+  {
+    value: 'demo',
+    label: 'Modo exploración',
+    subtitle: 'Acceso inmediato de evaluación',
+    icon: Sparkles,
+    badge: 'ABIERTO',
+    benefits: ['Datos precargados para recorrer la app', 'Sin email ni Telegram', 'Ideal para una revisión completa'],
+  },
+];
+
 export function OnboardingContactChoice({ onSelect }: Props) {
   const [method, setMethod] = useState<Method | null>(null);
-
-  const METHODS: { value: Method; label: string; subtitle: string; icon: React.ComponentType<{ className?: string }>; benefits: string[]; badge?: string }[] = [
-    {
-      value: 'telegram',
-      label: 'Telegram',
-      subtitle: 'Gratis, seguro y sin spam',
-      icon: MessageSquare,
-      benefits: [
-        '100% gratis · Sin límites de mensajes',
-        'Tu número de teléfono queda privado',
-        'Notificaciones: reservas, PINs, conductor, alertas',
-        'Puedes desvincular en cualquier momento con /desvincular',
-      ],
-    },
-    {
-      value: 'email',
-      label: 'Correo electrónico',
-      subtitle: 'Código OTP de 5 dígitos',
-      icon: Mail,
-      benefits: [
-        'Funciona sin apps adicionales',
-        'Código de 5 dígitos en tu bandeja de entrada',
-        'Expira en 5 minutos por seguridad',
-        'Puedes cambiarlo en tu perfil después',
-      ],
-    },
-    {
-      value: 'demo',
-      label: 'Modo DEMO',
-      subtitle: 'Saltarse verificación (solo evaluación)',
-      icon: Sparkles,
-      badge: 'DEMO',
-      benefits: [
-        'Acceso inmediato sin email ni Telegram',
-        'Código de prueba: 12345',
-        'Datos de prueba precargados',
-        'Ideal para revisar la app completa',
-      ],
-    },
-  ];
+  const active = METHODS.find((item) => item.value === method);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-8">
-      <Card elevated className="mx-auto max-w-md">
-        <div className="p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-text mb-2">¿Cómo verificamos tu cuenta?</h2>
-            <p className="text-sm text-text-secondary">
-              Elige tu método preferido para recibir el código de acceso
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {METHODS.map((m) => {
-              const Icon = m.icon;
-              const isSelected = method === m.value;
-              return (
-                <button
-                  key={m.value}
-                  type="button"
-                  onClick={() => setMethod(m.value)}
+    <OnboardingStage
+      step={2}
+      eyebrow="Método de acceso"
+      title="Verifica tu"
+      accent="identidad."
+      description="Elige cómo recibir tu código de acceso. En todos los casos verificamos que perteneces a la comunidad."
+    >
+      <div className="space-y-2">
+        {METHODS.map((item) => {
+          const Icon = item.icon;
+          const selected = method === item.value;
+          return (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => setMethod(item.value)}
+              className={cn(
+                'group relative w-full overflow-hidden rounded-[20px] border p-3.5 text-left transition-colors duration-300',
+                selected
+                  ? 'border-primary/40 bg-primary/[0.09]'
+                  : 'border-white/[0.08] bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.05]',
+              )}
+            >
+              {selected && (
+                <motion.span
+                  layoutId="contact-glow"
+                  className="pointer-events-none absolute inset-0 rounded-[20px] border border-primary/30"
+                  transition={springSnap}
+                />
+              )}
+              <div className="flex items-start gap-3.5">
+                <span
                   className={cn(
-                    'flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition-all relative',
-                    isSelected
-                      ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10 dark:bg-primary/5'
-                      : 'border-border bg-card hover:border-borderHover hover:bg-secondary/50 dark:border-border-dark dark:bg-card-dark dark:hover:bg-muted/30',
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors duration-300',
+                    selected
+                      ? 'border-primary/35 bg-primary/15 text-primary-light'
+                      : 'border-white/10 bg-white/[0.04] text-text-secondary group-hover:text-text',
                   )}
                 >
-                  {m.badge && (
-                    <span className="absolute -top-2 -right-2 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-extrabold text-accent-dark dark:text-accent border border-accent/30">
-                      {m.badge}
-                    </span>
-                  )}
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="block text-base font-semibold text-text">{m.label}</span>
-                        <span className="block text-xs text-text-secondary">{m.subtitle}</span>
-                      </div>
-                      {isSelected && (
-                        <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                  <Icon className="h-[18px] w-[18px]" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2">
+                      <span className="text-[13.5px] font-semibold text-text">{item.label}</span>
+                      {item.badge && (
+                        <span className="rounded-full border border-amber/30 bg-amber/10 px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.1em] text-amber">
+                          {item.badge}
+                        </span>
                       )}
-                    </div>
-                    <ul className="mt-3 space-y-1.5 text-xs text-text-secondary">
-                      {m.benefits.map((b, i) => (
-                        <li key={i} className="flex items-center gap-2">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                          <span>{b}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                    </span>
+                    <span
+                      className={cn(
+                        'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+                        selected ? 'border-accent bg-accent/20' : 'border-white/15',
+                      )}
+                    >
+                      {selected && <CheckCircle2 className="h-3 w-3 text-accent" />}
+                    </span>
+                  </span>
+                  <span className="mt-0.5 block font-mono text-[7.5px] uppercase tracking-[0.14em] text-text-secondary/50">
+                    {item.subtitle}
+                  </span>
 
-          <div className="mt-8">
-            <Button
-              variant={method === 'demo' ? 'secondary' : 'primary'}
-              fullWidth
-              disabled={!method}
-              onClick={() => method && onSelect(method)}
-            >
-              {method === 'demo' ? (
-                <>
-                  <Sparkles className="h-4 w-4 text-accent" />
-                  Continuar en Modo DEMO
-                </>
-              ) : (
-                `Continuar con ${method === 'telegram' ? 'Telegram' : 'Correo'}`
-              )}
-            </Button>
-          </div>
+                  <AnimatePresence initial={false}>
+                    {selected && (
+                      <motion.span
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.35 }}
+                        className="block overflow-hidden"
+                      >
+                        <span className="mt-2.5 block space-y-1.5">
+                          {item.benefits.map((benefit) => (
+                            <span key={benefit} className="flex items-start gap-1.5 text-[10px] leading-relaxed text-text-secondary">
+                              <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-accent/70" />
+                              {benefit}
+                            </span>
+                          ))}
+                        </span>
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
-          <p className="mt-4 text-center text-xs text-text-secondary">
-            Puedes cambiar tu método preferido en ajustes después
-          </p>
-        </div>
-        </Card>
-    </div>
+      <Button
+        variant={method === 'demo' ? 'secondary' : 'primary'}
+        fullWidth
+        size="lg"
+        className="mt-5"
+        disabled={!method}
+        onClick={() => method && onSelect(method)}
+      >
+        {active ? (
+          method === 'demo' ? (
+            <>
+              <Sparkles className="h-4 w-4" /> Entrar en modo exploración
+            </>
+          ) : (
+            `Continuar con ${active.label}`
+          )
+        ) : (
+          'Elige un método'
+        )}
+      </Button>
+      <p className="mt-3 text-center font-mono text-[7.5px] uppercase tracking-[0.14em] text-text-secondary/35">
+        Puedes cambiarlo después en ajustes
+      </p>
+    </OnboardingStage>
   );
 }

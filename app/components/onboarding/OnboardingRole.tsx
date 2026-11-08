@@ -1,93 +1,119 @@
 'use client';
 
 import { useState } from 'react';
-import { Car, User, RefreshCw } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Car, Check, RefreshCw, User } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
+import { OnboardingStage } from './OnboardingStage';
 import { cn } from '@/app/lib/design-system';
+import { springSnap } from '@/app/lib/motion';
 
 type Role = 'conductor' | 'viajero' | 'ambos';
 
+const ROLES: {
+  value: Role;
+  label: string;
+  subtitle: string;
+  detail: string;
+  Icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { value: 'conductor', label: 'Conductor', subtitle: 'Comparto mi ruta', detail: 'Publica cupos y reparte el costo de tu trayecto habitual.', Icon: Car },
+  { value: 'viajero', label: 'Viajero', subtitle: 'Busco un cupo', detail: 'Reserva un asiento verificado y viaja con estudiantes de tu corredor.', Icon: User },
+  { value: 'ambos', label: 'Ambos', subtitle: 'Según el día', detail: 'Conduce cuando tengas cupo y viaja cuando lo necesites.', Icon: RefreshCw },
+];
+
 export function OnboardingRole({ onSelect }: { onSelect: (role: Role) => void }) {
   const [role, setRole] = useState<Role | null>(null);
-
-  const ROLES: { value: Role; label: string; subtitle: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-    {
-      value: 'conductor',
-      label: 'Conductor',
-      subtitle: 'Publica tu ruta y comparte cupos',
-      Icon: Car,
-    },
-    {
-      value: 'viajero',
-      label: 'Viajero',
-      subtitle: 'Reserva un cupo y viaja con otros',
-      Icon: User,
-    },
-    {
-      value: 'ambos',
-      label: 'Ambos',
-      subtitle: 'Conduzco y viajo según el día',
-      Icon: RefreshCw,
-    },
-  ];
+  const active = ROLES.find((item) => item.value === role);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-8 text-center">
-      <Card elevated className="mx-auto max-w-md">
-        <div className="p-8">
-          <h2 className="text-2xl font-bold text-text mb-2">¿Quién eres?</h2>
-          <p className="text-sm text-text-secondary mb-8">
-            Elige tu rol para continuar en RutaCero
-          </p>
-
-          <div className="space-y-3">
-            {ROLES.map((r) => {
-              const Icon = r.Icon;
-              const isSelected = role === r.value;
-              return (
-                <button
-                  key={r.value}
-                  type="button"
-                  onClick={() => setRole(r.value)}
-                  className={cn(
-                    'flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-all',
-                    isSelected
-                      ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10 dark:bg-primary/5'
-                      : 'border-border bg-card hover:border-borderHover hover:bg-secondary/50 dark:border-border-dark dark:bg-card-dark dark:hover:bg-muted/30',
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <span className="block text-base font-semibold text-text">{r.label}</span>
-                      <span className="block text-xs text-text-secondary">{r.subtitle}</span>
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <svg className="h-5 w-5 text-primary" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-8">
-            <Button
-              variant="primary"
-              fullWidth
-              disabled={!role}
-              onClick={() => role && onSelect(role)}
+    <OnboardingStage
+      step={1}
+      eyebrow="Define tu rol"
+      title="¿Cómo te mueves"
+      accent="por Cali?"
+      description="Tu rol ajusta la experiencia: rutas que publicas, cupos que reservas y cómo te encuentra la comunidad."
+    >
+      <div className="space-y-2">
+        {ROLES.map((item) => {
+          const Icon = item.Icon;
+          const selected = role === item.value;
+          return (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => setRole(item.value)}
+              className={cn(
+                'group relative flex w-full items-start gap-3.5 overflow-hidden rounded-[20px] border p-3.5 text-left transition-colors duration-300',
+                selected
+                  ? 'border-primary/40 bg-primary/[0.09]'
+                  : 'border-white/[0.08] bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.05]',
+              )}
             >
-              Continuar como {role}
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </div>
+              {selected && (
+                <motion.span
+                  layoutId="role-glow"
+                  className="pointer-events-none absolute inset-0 rounded-[20px] border border-primary/30"
+                  transition={springSnap}
+                />
+              )}
+              <span
+                className={cn(
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors duration-300',
+                  selected
+                    ? 'border-primary/35 bg-primary/15 text-primary-light'
+                    : 'border-white/10 bg-white/[0.04] text-text-secondary group-hover:text-text',
+                )}
+              >
+                <Icon className="h-[18px] w-[18px]" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[13.5px] font-semibold text-text">{item.label}</span>
+                  <span
+                    className={cn(
+                      'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+                      selected ? 'border-accent bg-accent/20' : 'border-white/15',
+                    )}
+                  >
+                    {selected && <Check className="h-2.5 w-2.5 text-accent" />}
+                  </span>
+                </span>
+                <span className="mt-0.5 block font-mono text-[7.5px] uppercase tracking-[0.14em] text-text-secondary/50">
+                  {item.subtitle}
+                </span>
+                <AnimatePresence initial={false}>
+                  {selected && (
+                    <motion.span
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.35 }}
+                      className="block overflow-hidden"
+                    >
+                      <span className="mt-2 block text-[10.5px] leading-relaxed text-text-secondary">{item.detail}</span>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <Button
+        variant="primary"
+        fullWidth
+        size="lg"
+        className="mt-5"
+        disabled={!role}
+        onClick={() => role && onSelect(role)}
+      >
+        {active ? `Continuar como ${active.label.toLowerCase()}` : 'Elige tu rol'}
+      </Button>
+      <p className="mt-3 text-center font-mono text-[7.5px] uppercase tracking-[0.14em] text-text-secondary/35">
+        Podrás cambiarlo desde tu perfil
+      </p>
+    </OnboardingStage>
   );
 }

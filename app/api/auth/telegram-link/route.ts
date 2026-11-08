@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: pending.chatId,
-              text: `🔐 <b>RutaCero [DEMO] - Nuevo código</b>\n\nTu código de verificación es: <code>${newCode}</code>\n\nExpira en <b>5 minutos</b>.`,
+              text: `🔐 <b>RutaCero · Nuevo código</b>\n\nTu código de verificación es: <code>${newCode}</code>\n\nExpira en <b>5 minutos</b>.`,
               parse_mode: 'HTML',
             }),
             signal: AbortSignal.timeout(6000),

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
           await sendTelegramMessage(
             chatId,
-            `🔐 <b>RutaCero [DEMO] - Código de verificación</b>\n\n` +
+            `🔐 <b>RutaCero · Código de verificación</b>\n\n` +
             `Tu código es: <code>${code}</code>\n\n` +
             `⏱ Expira en <b>5 minutos</b>.\n` +
             `Ingrésalo en la aplicación para activar tus notificaciones.\n\n` +

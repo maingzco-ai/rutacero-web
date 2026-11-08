@@ -5,15 +5,18 @@ const POLITICA_FECHA = '2026-01-15';
 
 export function PoliticaPrivacidad() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-text">Política de Privacidad y Tratamiento de Datos Personales</h1>
-        <p className="mt-2 text-sm text-text-secondary">
+    <div>
+      <header className="mb-8 border-b border-white/[0.08] pb-6">
+        <p className="hud mb-3 text-[7.5px]">Privacidad · habeas data</p>
+        <h1 className="display text-[1.9rem] leading-tight text-text sm:text-[2.4rem]">
+          Privacidad y Tratamiento de Datos
+        </h1>
+        <p className="mt-3 font-mono text-[9px] text-text-secondary/60">
           Versión {POLITICA_VERSION} · Vigente desde {new Date(POLITICA_FECHA).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </header>
 
-      <article className="prose prose-slate dark:prose-invert max-w-none space-y-6">
+      <article className="legal-prose">
         <section>
           <h2>1. Responsable del Tratamiento</h2>
           <p>De conformidad con la Ley 1581/2012 y el Decreto 1377/2013, le informamos que el responsable del tratamiento de sus datos personales es:</p>

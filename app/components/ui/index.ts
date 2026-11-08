@@ -5,3 +5,4 @@ export { Badge, type BadgeProps } from './Badge';
 export { Progress, type ProgressProps } from './Progress';
 export { Modal } from './Modal';
 export { BottomSheet } from './BottomSheet';
+export { PageHeader } from './PageHeader';
