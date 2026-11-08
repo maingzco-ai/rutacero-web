@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CornerDownLeft, MapPin, X } from 'lucide-react';
 import { buscarSugerencias } from '@/app/lib/mapsCali';
 import { cn } from '@/app/lib/design-system';
-import { EASE, springSoft } from '@/app/lib/motion';
+import { springSoft } from '@/app/lib/motion';
 
 type SmartSearchInputProps = {
   value?: string;
@@ -36,6 +36,7 @@ export default function SmartSearchInput({
     (next: string) => {
       if (onValueChange) onValueChange(next);
       else setInnerQuery(next);
+      setHighlight(0);
     },
     [onValueChange],
   );
@@ -52,10 +53,6 @@ export default function SmartSearchInput({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [focused]);
-
-  useEffect(() => {
-    setHighlight(0);
-  }, [query]);
 
   const handleSelect = useCallback(
     (oficial: string) => {

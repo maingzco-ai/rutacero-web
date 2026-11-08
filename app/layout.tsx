@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Sora, Instrument_Serif, Geist_Mono } from 'next/font/google';
+import { Syne, Fraunces, Geist_Mono } from 'next/font/google';
 import { AppStateProvider } from './lib/AppState';
 import { ThemeProvider } from './hooks/useTheme';
 import { DepthProvider } from './hooks/useDepth';
@@ -8,18 +8,18 @@ import { CursorLens } from './components/fx/CursorLens';
 import { brand } from './lib/brand';
 import './globals.css';
 
-const sora = Sora({
-  subsets: ['latin'],
-  variable: '--font-sora',
+const syne = Syne({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-syne',
   display: 'swap',
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700', '800'],
 });
 
-const instrument = Instrument_Serif({
-  subsets: ['latin'],
-  variable: '--font-instrument',
+const fraunces = Fraunces({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-fraunces',
   display: 'swap',
-  weight: '400',
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   style: ['normal', 'italic'],
 });
 
@@ -90,7 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="es"
-      className={`${sora.variable} ${instrument.variable} ${geistMono.variable} dark h-full antialiased`}
+      className={`${syne.variable} ${fraunces.variable} ${geistMono.variable} dark h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full bg-background text-text font-sans selection:bg-primary/30">

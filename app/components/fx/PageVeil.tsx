@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { EASE } from '@/app/lib/motion';
@@ -11,15 +11,18 @@ export function PageVeil() {
   const first = useRef(true);
   const [active, setActive] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (first.current) {
       first.current = false;
       return;
     }
     if (reduced) return;
-    setActive(true);
-    const timer = window.setTimeout(() => setActive(false), 980);
-    return () => window.clearTimeout(timer);
+    const raf = requestAnimationFrame(() => {
+      setActive(true);
+      const timer = window.setTimeout(() => setActive(false), 980);
+      return () => window.clearTimeout(timer);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [pathname, reduced]);
 
   return (

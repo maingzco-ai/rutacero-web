@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -390,7 +390,7 @@ function Scene({ particleCount, enablePost }: { particleCount: number; enablePos
 export function Atmosphere() {
   const [settings, setSettings] = useState<{ count: number; post: boolean; dpr: number } | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const width = window.innerWidth;
     const mobile = width < 768;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
