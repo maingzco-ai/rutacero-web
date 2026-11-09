@@ -26,12 +26,16 @@ interface InteractiveMapProps {
   hud?: boolean;
 }
 
-function FitRoute({ points }: { points: [number, number][] }) {
+function FitRoute({ points, enabled = true }: { points: [number, number][]; enabled?: boolean }) {
   const map = useMap();
   useEffect(() => {
-    if (points.length < 2) return;
-    map.fitBounds(points, { padding: [56, 56], maxZoom: 14 });
-  }, [map, points]);
+    if (!enabled || points.length < 2) return;
+    // Use requestAnimationFrame to ensure map is fully rendered
+    const frame = requestAnimationFrame(() => {
+      map.fitBounds(points, { padding: [56, 56], maxZoom: 14 });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [map, points, enabled]);
   return null;
 }
 
@@ -44,8 +48,17 @@ const STEP_ICON: Record<CalculatedRoute['steps'][number]['type'] | string, strin
 };
 
 export default function InteractiveMap({ routeData, className, hud = true }: InteractiveMapProps) {
-  const center: [number, number] = [3.372, -76.532];
   const [route, setRoute] = useState<CalculatedRoute | null>(null);
+
+  // Calculate dynamic center from route data or default to Cali center
+  const center = useMemo((): [number, number] => {
+    if (!routeData) return [3.372, -76.532]; // Cali default
+    const lats = [routeData.origen.lat, routeData.destino.lat, ...routeData.paradas.map(p => p.lat)];
+    const lngs = [routeData.origen.lng, routeData.destino.lng, ...routeData.paradas.map(p => p.lng)];
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    return [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
+  }, [routeData]);
 
   const icons = useMemo(
     () => ({
@@ -107,6 +120,7 @@ export default function InteractiveMap({ routeData, className, hud = true }: Int
         zoomControl={false}
         attributionControl
         className="map-dark h-full w-full"
+        whenCreated={routeData ? undefined : (map => map.setView(center, 13))}
       >
         <TileLayer
           attribution="Esri, HERE, Garmin &copy; OpenStreetMap contributors"
@@ -122,7 +136,7 @@ export default function InteractiveMap({ routeData, className, hud = true }: Int
 
         {routeData && (
           <>
-            <FitRoute points={points} />
+            <FitRoute points={points} enabled={true} />
             {routePoints.length >= 2 && (
               <>
                 <Polyline

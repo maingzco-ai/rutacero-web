@@ -53,13 +53,42 @@ export default function PublishExperience() {
   const router = useRouter();
   const reduced = useReducedMotion();
   const { publishRoute } = useAppState();
-  const [origin, setOrigin] = useState('Ciudad Jardín');
-  const [destination, setDestination] = useState('Universidad Icesi');
+
+  // Get last searched origin from URL params or localStorage, fallback to empty for user to choose
+  const [origin, setOrigin] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlOrigin = params.get('origen');
+      if (urlOrigin) return decodeURIComponent(urlOrigin);
+      const saved = localStorage.getItem('rutacero-last-origin');
+      if (saved) return saved;
+    }
+    return '';
+  });
+  const [destination, setDestination] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlDest = params.get('destino');
+      if (urlDest) return decodeURIComponent(urlDest);
+      const saved = localStorage.getItem('rutacero-last-destination');
+      if (saved) return saved;
+    }
+    return 'Universidad Icesi';
+  });
   const [plate, setPlate] = useState('');
   const [vehicle, setVehicle] = useState('');
   const [seats, setSeats] = useState(3);
   const [departure, setDeparture] = useState('07:00');
   const [done, setDone] = useState(false);
+
+  // Persist last used origin/destination
+  useEffect(() => {
+    if (origin) localStorage.setItem('rutacero-last-origin', origin);
+  }, [origin]);
+
+  useEffect(() => {
+    if (destination) localStorage.setItem('rutacero-last-destination', destination);
+  }, [destination]);
 
   const plateOk = validation.licensePlate(plate);
   const vehicleOk = vehicle.trim().length >= 3;
