@@ -32,6 +32,9 @@ export type Reservation = {
   pin: string;
   pickup: string;
   preference: string;
+  paymentMethod: 'nequi' | 'daviplata' | 'efectivo';
+  commission: number;      // 12% del precio para pagos digitales
+  driverNet: number;       // Lo que recibe el conductor (88% en digital, 100% en efectivo)
   createdAt: string;
   status: 'confirmada' | 'completada' | 'cancelada';
 };
@@ -46,6 +49,16 @@ export type PublishedRoute = {
   price: number;
   departure: string;
   createdAt: string;
+};
+
+export type RouteRequest = {
+  id: string;
+  origin: string;
+  destination: string;
+  departure: string;
+  createdAt: string;
+  status: 'pending' | 'matched' | 'expired';
+  notes?: string;
 };
 
 export type Conversation = {

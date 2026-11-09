@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Clock3, MapPin, MessageCircle, ShieldCheck, Sparkles, Star, Users } from 'lucide-react';
+import { ArrowRight, Clock3, MapPin, MessageCircle, ShieldCheck, Sparkles, Star, Users, Smartphone, Wallet } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { TiltCard } from '../fx/TiltCard';
@@ -35,10 +35,11 @@ const RouteDirections = dynamic(() => import('../InteractiveMap').then((mod) => 
 export default function TripDetail({ trip }: { trip: Trip }) {
   const router = useRouter();
   const reduced = useReducedMotion();
-  const { reserveSeat, reservations } = useAppState();
+  const { reserveSeat, reservations, paymentMethods } = useAppState();
   const [open, setOpen] = useState(false);
   const [preference, setPreference] = useState('Conversación ligera');
   const [pickup, setPickup] = useState(CURRENT_LOCATION);
+  const [paymentMethod, setPaymentMethod] = useState<'nequi' | 'daviplata' | 'efectivo'>('nequi');
   const [route, setRoute] = useState<CalculatedRoute | null>(null);
 
   const existing = reservations.find((item) => item.tripId === trip.id && item.status === 'confirmada');
@@ -294,6 +295,72 @@ export default function TripDetail({ trip }: { trip: Trip }) {
             </select>
           </label>
 
+          <label className="block">
+            <span className="hud mb-2 block text-[8px]">Método de pago</span>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'nequi', label: 'Nequi', icon: Smartphone, color: 'bg-primary/20 text-primary' },
+                { id: 'daviplata', label: 'DaviPlata', icon: Smartphone, color: 'bg-amber/20 text-amber' },
+                { id: 'efectivo', label: 'Efectivo', icon: Wallet, color: 'bg-success/20 text-success' },
+              ].map((method) => {
+                const Icon = method.icon;
+                const selected = paymentMethod === method.id;
+                return (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(method.id as 'nequi' | 'daviplata' | 'efectivo')}
+                    className={cn(
+                      'relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 text-[10px] font-medium transition-all duration-300',
+                      selected
+                        ? 'border-accent/50 bg-accent/10'
+                        : 'border-white/10 hover:border-white/20',
+                    )}
+                  >
+                    <Icon className={cn('h-5 w-5', method.color)} />
+                    <span className={selected ? 'text-text' : 'text-text-secondary'}>{method.label}</span>
+                    {selected && (
+                      <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-accent flex items-center justify-center">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </label>
+
+          {/* Commission breakdown */}
+          {paymentMethod !== 'efectivo' && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+              <p className="flex items-center gap-1.5 text-[10px] text-primary-light">
+                <Sparkles className="h-3 w-3" />
+                Comisión RutaCero: 12% ({formatCOP(Math.round(trip.price * 0.12))})
+              </p>
+              <p className="mt-1 text-[10px] text-text-secondary/70">
+                El conductor recibe: <span className="font-mono text-text">{formatCOP(Math.round(trip.price * 0.88))}</span>
+              </p>
+              <p className="mt-1 text-[10px] text-text-secondary/70">
+                Tú pagas: <span className="font-mono text-text">{formatCOP(trip.price)}</span>
+              </p>
+            </div>
+          )}
+
+          {paymentMethod === 'efectivo' && (
+            <div className="rounded-xl border border-success/20 bg-success/5 p-3">
+              <p className="flex items-center gap-1.5 text-[10px] text-success">
+                <Wallet className="h-3 w-3" />
+                Sin comisión · Pago directo al conductor
+              </p>
+              <p className="mt-1 text-[10px] text-text-secondary/70">
+                Tú pagas: <span className="font-mono text-text">{formatCOP(trip.price)}</span> en efectivo al abordar
+              </p>
+              <p className="mt-1 text-[10px] text-text-secondary/70">
+                El conductor recibe: <span className="font-mono text-text">{formatCOP(trip.price)}</span> (100%)
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
             <span className="hud text-[7.5px]">Total a pagar</span>
             <span className="font-mono text-[15px] text-text">{formatCOP(trip.price)}</span>
@@ -306,12 +373,12 @@ export default function TripDetail({ trip }: { trip: Trip }) {
           fullWidth
           size="lg"
           onClick={() => {
-            const reservation = reserveSeat(trip.id, pickup, preference);
+            const reservation = reserveSeat(trip.id, pickup, preference, paymentMethod);
             setOpen(false);
             if (reservation) router.push('/historial');
           }}
         >
-          Pagar {formatCOP(trip.price)} y reservar
+          {paymentMethod === 'efectivo' ? 'Confirmar y pagar en efectivo' : `Pagar ${formatCOP(trip.price)} y reservar`}
         </Button>
         <p className="mt-3 text-center font-mono text-[8px] uppercase tracking-[0.14em] text-text-secondary/50">
           Protegido por RutaCero · Cancela 1 h antes sin costo

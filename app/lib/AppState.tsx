@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, startTransition, type ReactNode } from 'react';
-import { generatePin } from './design-system';
+import { generatePin, formatCOP } from './design-system';
 import { trips as catalogTrips, addPublishedToCatalog, syncPublishedWithCatalog } from './catalog';
 import type {
   AppNotification,
@@ -10,18 +10,22 @@ import type {
   PaymentMethod,
   PublishedRoute,
   Reservation,
+  RouteRequest,
 } from './types';
 
 type AppState = {
   reservations: Reservation[];
   published: PublishedRoute[];
+  routeRequests: RouteRequest[];
   conversations: Conversation[];
   notifications: AppNotification[];
   ledger: LedgerEntry[];
   balance: number;
   preferredPayment: string;
-  reserveSeat: (tripId: string, pickup: string, preference: string) => Reservation | null;
+  paymentMethods: PaymentMethod[];
+  reserveSeat: (tripId: string, pickup: string, preference: string, paymentMethod: 'nequi' | 'daviplata' | 'efectivo') => Reservation | null;
   publishRoute: (route: Omit<PublishedRoute, 'id' | 'createdAt'>) => PublishedRoute;
+  publishRouteRequest: (request: Omit<RouteRequest, 'id' | 'createdAt' | 'status'>) => RouteRequest;
   sendMessage: (conversationId: string, text: string) => void;
   markNotificationsRead: () => void;
   setPreferredPayment: (id: string) => void;
@@ -35,6 +39,7 @@ const STORAGE_KEY = 'rutacero-session';
 type Persisted = {
   reservations: Reservation[];
   published: PublishedRoute[];
+  routeRequests: RouteRequest[];
   conversations: Conversation[];
   notifications: AppNotification[];
   ledger: LedgerEntry[];
@@ -66,6 +71,7 @@ function sanitizePersisted(raw: unknown): Persisted | null {
   return {
     reservations: isArray(obj.reservations) ? safeArray(obj.reservations, isObject) as Reservation[] : [],
     published: isArray(obj.published) ? safeArray(obj.published, isObject) as PublishedRoute[] : [],
+    routeRequests: isArray(obj.routeRequests) ? safeArray(obj.routeRequests, isObject) as RouteRequest[] : [],
     conversations: isArray(obj.conversations) ? safeArray(obj.conversations, isObject) as Conversation[] : [],
     notifications: isArray(obj.notifications) ? safeArray(obj.notifications, isObject) as AppNotification[] : [],
     ledger: isArray(obj.ledger) ? safeArray(obj.ledger, isObject) as LedgerEntry[] : [],
@@ -84,6 +90,7 @@ export const paymentMethods: PaymentMethod[] = [
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [published, setPublished] = useState<PublishedRoute[]>([]);
+  const [routeRequests, setRouteRequests] = useState<RouteRequest[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([
     {
       id: 'conv-demo-1',
@@ -131,6 +138,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           startTransition(() => {
             setReservations(safe.reservations as Reservation[]);
             setPublished(safe.published as PublishedRoute[]);
+            setRouteRequests(safe.routeRequests as RouteRequest[]);
             if (safe.conversations.length > 0) setConversations(safe.conversations as Conversation[]);
             if (safe.notifications.length > 0) setNotifications(safe.notifications as AppNotification[]);
             if (safe.ledger.length > 0) setLedger(safe.ledger as LedgerEntry[]);
@@ -155,6 +163,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const payload: Persisted = {
       reservations,
       published,
+      routeRequests,
       conversations,
       notifications,
       ledger,
@@ -166,10 +175,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
-  }, [hydrated, reservations, published, conversations, notifications, ledger, balance, preferredPayment]);
+  }, [hydrated, reservations, published, routeRequests, conversations, notifications, ledger, balance, preferredPayment]);
 
   const reserveSeat = useCallback(
-    (tripId: string, pickup: string, preference: string): Reservation | null => {
+    (tripId: string, pickup: string, preference: string, paymentMethod: 'nequi' | 'daviplata' | 'efectivo'): Reservation | null => {
       if (!isSafeString(tripId) || !isSafeString(pickup) || !isSafeString(preference)) {
         return null;
       }
@@ -182,6 +191,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
       // Actualizar ocupación en el catálogo
       trip.seatsTaken = Math.min(trip.seats, trip.seatsTaken + 1);
+
+      // Calcular comisión: 12% para pagos digitales, 0% para efectivo
+      const isDigital = paymentMethod === 'nequi' || paymentMethod === 'daviplata';
+      const commission = isDigital ? Math.round(trip.price * 0.12) : 0;
+      const driverNet = trip.price - commission;
 
       const reservationId = typeof crypto !== 'undefined' && crypto.randomUUID
         ? `res-${crypto.randomUUID()}`
@@ -199,27 +213,38 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         pin: generatePin(),
         pickup,
         preference,
+        paymentMethod,
+        commission,
+        driverNet,
         createdAt: nowLabel(),
         status: 'confirmada',
       };
 
       setReservations((prev) => [reservation, ...prev]);
+
+      // Pasajero paga el precio completo
       setBalance((prev) => prev - trip.price);
       setLedger((prev) => [
         {
           id: ledgerId,
-          label: `Cupo reservado · ${trip.origin} → ${trip.destination}`,
+          label: `Cupo reservado · ${trip.origin} → ${trip.destination} (${paymentMethod === 'efectivo' ? 'Efectivo' : paymentMethod})`,
           amount: -trip.price,
           at: nowLabel(),
           type: 'cargo',
         },
         ...prev,
       ]);
+
+      // Notificación al pasajero
+      const paymentInfo = paymentMethod === 'efectivo'
+        ? `Pago en efectivo al conductor. PIN ${reservation.pin}.`
+        : `Pagado por ${paymentMethod}. Comisión 12% (${formatCOP(commission)}). Conductor recibe ${formatCOP(driverNet)}. PIN ${reservation.pin}.`;
+
       setNotifications((prev) => [
         {
           id: notifId,
           title: 'Cupo confirmado [PIN de abordaje]',
-          body: `PIN ${reservation.pin}. ${trip.driver.name} te espera a las ${trip.departure}.`,
+          body: `${trip.driver.name} te espera a las ${trip.departure}. ${paymentInfo}`,
           at: 'Ahora',
           read: false,
           href: '/historial',
@@ -237,14 +262,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             tripId: trip.id,
             peerName: trip.driver.name,
             peerRole: 'conductor',
-            lastMessage: `¡Hola! Reserva confirmada con PIN ${reservation.pin}.`,
+            lastMessage: `¡Hola! Reserva confirmada con PIN ${reservation.pin}. Pago: ${paymentMethod === 'efectivo' ? 'Efectivo' : paymentMethod}.`,
             lastAt: nowLabel(),
             unread: 0,
             messages: [
               {
                 id: `msg-${Date.now()}`,
                 from: 'yo',
-                text: `¡Hola! He reservado un cupo con punto de recogida en ${pickup}. Mi PIN es ${reservation.pin}.`,
+                text: `¡Hola! He reservado un cupo con punto de recogida en ${pickup}. Mi PIN es ${reservation.pin}. Pago por ${paymentMethod === 'efectivo' ? 'efectivo' : paymentMethod}.`,
                 at: nowLabel(),
               },
             ],
@@ -308,6 +333,69 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return created;
   }, []);
 
+  const publishRouteRequest = useCallback(
+    (request: Omit<RouteRequest, 'id' | 'createdAt' | 'status'>): RouteRequest => {
+      const safeString = (value: string): boolean => {
+        return /^[a-zA-Z0-9áéíóúñÁÉÍÓÚÑüÜ\s,.\-()#/:°º'&]+$/.test(value);
+      };
+
+      if (
+        !safeString(request.origin) ||
+        !safeString(request.destination) ||
+        !safeString(request.departure || '')
+      ) {
+        throw new Error('Datos de solicitud inválidos');
+      }
+
+      // Validar que la salida sea en más de 4 horas
+      const now = new Date();
+      const [hours, minutes] = request.departure.split(':').map(Number);
+      const departureDate = new Date();
+      departureDate.setHours(hours, minutes, 0, 0);
+
+      // Si la hora ya pasó hoy, asumimos que es para mañana
+      if (departureDate <= now) {
+        departureDate.setDate(departureDate.getDate() + 1);
+      }
+
+      const diffHours = (departureDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+      if (diffHours < 4) {
+        throw new Error('La solicitud debe hacerse con al menos 4 horas de antelación');
+      }
+
+      const requestId = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? `req-${crypto.randomUUID()}`
+        : `req-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const notifId = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? `n-${crypto.randomUUID()}`
+        : `n-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+      const created: RouteRequest = {
+        ...request,
+        id: requestId,
+        createdAt: nowLabel(),
+        status: 'pending',
+      };
+
+      setRouteRequests((prev) => [created, ...prev]);
+
+      setNotifications((prev) => [
+        {
+          id: notifId,
+          title: 'Solicitud de ruta publicada',
+          body: `${request.origin} → ${request.destination} a las ${request.departure}. Conductores verán tu solicitud.`,
+          at: 'Ahora',
+          read: false,
+          href: '/historial',
+        },
+        ...prev,
+      ]);
+
+      return created;
+    },
+    [],
+  );
+
   const sendMessage = useCallback((conversationId: string, text: string) => {
     if (!isSafeString(conversationId)) return;
     const trimmed = text.trim();
@@ -342,13 +430,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     () => ({
       reservations,
       published,
+      routeRequests,
       conversations,
       notifications,
       ledger,
       balance,
       preferredPayment,
+      paymentMethods,
       reserveSeat,
       publishRoute,
+      publishRouteRequest,
       sendMessage,
       markNotificationsRead,
       setPreferredPayment,
@@ -358,13 +449,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [
       reservations,
       published,
+      routeRequests,
       conversations,
       notifications,
       ledger,
       balance,
       preferredPayment,
+      paymentMethods,
       reserveSeat,
       publishRoute,
+      publishRouteRequest,
       sendMessage,
       markNotificationsRead,
       unreadMessages,

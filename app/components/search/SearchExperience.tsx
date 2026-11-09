@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowUpDown, Compass, Route, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { ArrowUpDown, Compass, Route, SlidersHorizontal, Sparkles, Users, Car, AlertCircle } from 'lucide-react';
 import SmartSearchInput from '../SmartSearchInput';
 import { Button } from '../ui/Button';
 import { TripCard } from '../trips/TripCard';
@@ -14,8 +14,26 @@ import { Magnetic } from '../fx/Magnetic';
 import { matchTrips } from '@/app/lib/catalog';
 import { resolverPunto } from '@/app/lib/mapsCali';
 import { cn } from '@/app/lib/design-system';
+import { useAppState } from '@/app/lib/AppState';
+import { RouteRequestCard } from './RouteRequestCard';
 
 type SortMode = 'salida' | 'precio';
+
+function readUserRole(): 'conductor' | 'viajero' | 'ambos' | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem('rutacero-onboarding');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.role && ['conductor', 'viajero', 'ambos'].includes(parsed.role)) {
+        return parsed.role;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
 
 export default function SearchExperience({
   initialOrigin,
@@ -26,9 +44,19 @@ export default function SearchExperience({
 }) {
   const router = useRouter();
   const reduced = useReducedMotion();
+  const { routeRequests } = useAppState();
   const [origin, setOrigin] = useState(initialOrigin);
   const [destination, setDestination] = useState(initialDestination);
   const [sort, setSort] = useState<SortMode>('salida');
+  const [userRole, setUserRole] = useState<'conductor' | 'viajero' | 'ambos' | null>(null);
+
+  useEffect(() => {
+    setUserRole(readUserRole());
+    window.addEventListener('storage', () => setUserRole(readUserRole()));
+    return () => window.removeEventListener('storage', () => setUserRole(readUserRole()));
+  }, []);
+
+  const isDriver = userRole === 'conductor' || userRole === 'ambos';
 
   const results = useMemo(() => {
     const resolvedOrigin = resolverPunto(origin).nombre;
@@ -44,6 +72,26 @@ export default function SearchExperience({
 
     return [...base].sort((a, b) => (sort === 'precio' ? a.price - b.price : 0));
   }, [origin, destination, sort]);
+
+  // Filtrar solicitudes de ruta que coincidan con la búsqueda (solo para conductores)
+  const matchingRequests = useMemo(() => {
+    if (!isDriver) return [];
+    const resolvedOrigin = resolverPunto(origin).nombre;
+    const resolvedDest = resolverPunto(destination).nombre;
+    const o = resolvedOrigin.toLowerCase();
+    const d = resolvedDest.toLowerCase();
+
+    return routeRequests
+      .filter((req) => req.status === 'pending')
+      .filter((req) => {
+        const reqOrigin = req.origin.toLowerCase();
+        const reqDest = req.destination.toLowerCase();
+        const originHit = reqOrigin.includes(o) || o.includes(reqOrigin.slice(0, 8));
+        const destHit = reqDest.includes(d) || d.includes(reqDest.slice(0, 8));
+        return originHit && destHit;
+      })
+      .slice(0, 4);
+  }, [origin, destination, routeRequests, isDriver]);
 
   const best = results[0];
 
@@ -203,39 +251,59 @@ export default function SearchExperience({
           </div>
 
           <AnimatePresence mode="popLayout">
-            {results.length > 0 ? (
-              <Stagger key="results" className="grid gap-4 sm:grid-cols-2" stagger={0.09}>
-                {results.map((trip) => (
-                  <StaggerItem key={trip.id} className="h-full">
-                    <TripCard trip={trip} />
-                  </StaggerItem>
-                ))}
-              </Stagger>
-            ) : (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="glass-strong flex flex-col items-center rounded-[28px] px-6 py-16 text-center"
-              >
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-primary-light">
-                  <Route className="h-6 w-6" />
-                </span>
-                <p className="display mt-5 text-2xl">Sin rutas en ese vector</p>
-                <p className="mt-2 max-w-xs text-sm text-text-secondary">
-                  No hay cupos para esa combinación ahora mismo. Prueba un destino cercano o publica el tramo.
-                </p>
-                <div className="mt-6 flex gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => setDestination('Universidad Icesi')}>
-                    Universidad Icesi
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => router.push('/publicar')}>
-                    Publicar ruta
-                  </Button>
-                </div>
-              </motion.div>
-            )}
+            {results.length > 0 || (isDriver && matchingRequests.length > 0) ? (
+              <>
+                {results.length > 0 && (
+                  <Stagger key="trips" className="grid gap-4 sm:grid-cols-2" stagger={0.09}>
+                    {results.map((trip) => (
+                      <StaggerItem key={trip.id} className="h-full">
+                        <TripCard trip={trip} />
+                      </StaggerItem>
+                    ))}
+                  </Stagger>
+                )}
+                {isDriver && matchingRequests.length > 0 && (
+                  <div key="requests">
+                    <p className="hud text-[8px] mb-3 flex items-center gap-2 text-accent/80">
+                      <Users className="h-3 w-3" />
+                      Solicitudes de cupo ({matchingRequests.length})
+                    </p>
+                    <Stagger className="grid gap-4 sm:grid-cols-2" stagger={0.09}>
+                      {matchingRequests.map((req) => (
+                        <StaggerItem key={req.id} className="h-full">
+                          <RouteRequestCard request={req} />
+                        </StaggerItem>
+                      ))}
+                    </Stagger>
+                  </div>
+                )}
+                {results.length === 0 && (!isDriver || matchingRequests.length === 0) && (
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="glass-strong flex flex-col items-center rounded-[28px] px-6 py-16 text-center"
+                  >
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-primary-light">
+                      <Route className="h-6 w-6" />
+                    </span>
+                    <p className="display mt-5 text-2xl">Sin rutas en ese vector</p>
+                    <p className="mt-2 max-w-xs text-sm text-text-secondary">
+                      No hay cupos para esa combinación ahora mismo. Prueba un destino cercano o publica el tramo.
+                    </p>
+                    <div className="mt-6 flex gap-2">
+                      <Button variant="secondary" size="sm" onClick={() => setDestination('Universidad Icesi')}>
+                        Universidad Icesi
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => router.push('/publicar')}>
+                        Publicar ruta
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </>
+            ) : null}
           </AnimatePresence>
 
           {best && (
