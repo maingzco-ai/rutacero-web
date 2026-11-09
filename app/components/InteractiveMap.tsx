@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, Polyline, TileLayer, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import L, { Map as LeafletMap } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { cn } from '@/app/lib/design-system';
 import { calculateRoute, type CalculatedRoute } from '@/app/lib/routing';
@@ -36,6 +36,15 @@ function FitRoute({ points, enabled = true }: { points: [number, number][]; enab
     });
     return () => cancelAnimationFrame(frame);
   }, [map, points, enabled]);
+  return null;
+}
+
+function InitialView({ center, enabled }: { center: [number, number]; enabled: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!enabled) return;
+    map.setView(center, 13);
+  }, [map, center, enabled]);
   return null;
 }
 
@@ -120,8 +129,8 @@ export default function InteractiveMap({ routeData, className, hud = true }: Int
         zoomControl={false}
         attributionControl
         className="map-dark h-full w-full"
-        whenCreated={routeData ? undefined : (map => map.setView(center, 13))}
       >
+        <InitialView center={center} enabled={!routeData} />
         <TileLayer
           attribution="Esri, HERE, Garmin &copy; OpenStreetMap contributors"
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
